@@ -51,7 +51,7 @@ namespace pdf_compressor.Controllers
                         
                         Console.WriteLine("1. File received");
                         
-                        (inputPath, outputPath,jobId) = await handleRequest_file.handleFile(file);
+                        (inputPath, outputPath, jobId) = await _fileStorage.CreateJobFilesAsync(file);
                         
                         Console.WriteLine("1. File path done");
                         
@@ -102,8 +102,7 @@ namespace pdf_compressor.Controllers
                                 return NotFound("Job not found");
                         }
 
-                        PdfJob? job =
-                                JsonSerializer.Deserialize<PdfJob>(json);
+                        PdfJob? job = JsonSerializer.Deserialize<PdfJob>(json);
 
                         if (job == null)
                         {
