@@ -1,6 +1,5 @@
 ﻿using Microsoft.AspNetCore.Http.Features;
 using pdf_compressor.Hubs;
-using pdf_compressor.Service;
 using pdf_compressor.Services.Compression;
 using pdf_compressor.Services.Jobs;
 using pdf_compressor.Services.Queue;
@@ -28,7 +27,6 @@ public class Program
         builder.Services.AddSingleton<IFileStorage, LocalFileStorage>();
         
         builder.Services.AddSignalR();
-        builder.Services.AddSingleton<PdfQueueService>();
         builder.Services.AddHostedService<PdfWorker>();
         
         builder.WebHost.ConfigureKestrel(options =>

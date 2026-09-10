@@ -4,7 +4,6 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.SignalR;
 using pdf_compressor.Hubs;
 using pdf_compressor.Models;
-using pdf_compressor.Service;
 using pdf_compressor.Services.Jobs;
 using pdf_compressor.Services.Queue;
 using pdf_compressor.Services.Storage;
