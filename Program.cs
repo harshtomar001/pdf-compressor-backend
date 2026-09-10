@@ -4,6 +4,7 @@ using pdf_compressor.Service;
 using pdf_compressor.Services.Compression;
 using pdf_compressor.Services.Jobs;
 using pdf_compressor.Services.Queue;
+using pdf_compressor.Services.Storage;
 using pdf_compressor.Workers;
 
 public class Program
@@ -23,6 +24,8 @@ public class Program
         
         builder.Services.AddSingleton<IPdfQueue, PdfQueue>();
         builder.Services.AddSingleton<IJobService, JobService>();
+        
+        builder.Services.AddSingleton<IFileStorage, LocalFileStorage>();
         
         builder.Services.AddSignalR();
         builder.Services.AddSingleton<PdfQueueService>();

@@ -6,6 +6,7 @@ using pdf_compressor.Helper;
 using pdf_compressor.Service;
 using pdf_compressor.Services.Jobs;
 using pdf_compressor.Services.Queue;
+using pdf_compressor.Services.Storage;
 
 namespace pdf_compressor.Workers;
 
@@ -15,14 +16,17 @@ public class PdfWorker : BackgroundService
     private readonly IJobService _jobService;
     private readonly CompressionRouter _compressionRouter;
     private readonly IHubContext<PdfHub> _hub;
-
+    
+    
+    
     private readonly SemaphoreSlim workerLimit = new(3);
 
     public PdfWorker(
         IPdfQueue queue,
         IJobService jobService,
         CompressionRouter compressionRouter,
-        IHubContext<PdfHub> hub)
+        IHubContext<PdfHub> hub
+        )
     {
         _queue = queue;
         _jobService = jobService;

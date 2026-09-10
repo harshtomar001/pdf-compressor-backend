@@ -7,6 +7,7 @@ using pdf_compressor.Models;
 using pdf_compressor.Service;
 using pdf_compressor.Services.Jobs;
 using pdf_compressor.Services.Queue;
+using pdf_compressor.Services.Storage;
 
 namespace pdf_compressor.Controllers
 {
@@ -20,12 +21,18 @@ namespace pdf_compressor.Controllers
                 private readonly IPdfQueue _queue;
                 private readonly IJobService _jobService;   
                 private readonly IHubContext<PdfHub> _hub;
+                private readonly IFileStorage _fileStorage;
 
-                public PdfCompressorController(IPdfQueue _queue,IJobService jobService,IHubContext<PdfHub> hub)
+                public PdfCompressorController(
+                        IPdfQueue _queue,
+                        IJobService jobService,
+                        IFileStorage fileStorage,
+                        IHubContext<PdfHub> hub)
                 {
                         this._queue = _queue;
                         this._hub = hub;
                         this._jobService = jobService;
+                        this._fileStorage = fileStorage;
                 }
 
                 
@@ -69,13 +76,9 @@ namespace pdf_compressor.Controllers
                         
                         Console.WriteLine(json);
 
-                        string ? folderName=Path.GetDirectoryName(inputPath); // getting the folder name of the each request
-                        
-                        string? jobFile = Path.Combine(folderName, "job.json"); // creating the  json file  in subfolder of the request 
+                        await _fileStorage.SaveJobAsync(jobId, json);
 
-                        await System.IO.File.WriteAllTextAsync(jobFile, json);// writing data to job.json file 
-                        
-                        Console.WriteLine(jobFile);
+                        Console.WriteLine($"Saved job data for: {jobId}");
 
                         _jobService.AddJob(pdfJob);
                         _queue.Enqueue(pdfJob);
@@ -89,14 +92,23 @@ namespace pdf_compressor.Controllers
 
                 }
 
+                
                 [HttpGet("get_compress_PDF")]
                 public async Task<IActionResult> GetCompress(string jobId)
                 {
-                        PdfJob? job = _jobService.GetJob(jobId);
+                        string? json = await _fileStorage.ReadJobAsync(jobId);
+
+                        if (json == null)
+                        {
+                                return NotFound("Job not found");
+                        }
+
+                        PdfJob? job =
+                                JsonSerializer.Deserialize<PdfJob>(json);
 
                         if (job == null)
                         {
-                                return NotFound("Job not found");
+                                return BadRequest("Invalid job data");
                         }
 
                         if (job.Status != "Completed")
@@ -106,21 +118,20 @@ namespace pdf_compressor.Controllers
                                 );
                         }
 
-                        string folder = Path.Combine("PDF_folder", jobId);
-
-                        Response.OnCompleted(() =>
+                        Response.OnCompleted(async () =>
                         {
                                 try
                                 {
-                                        Directory.Delete(folder, true);
-                                        Console.WriteLine($"Deleted {folder}");
+                                        await _fileStorage.DeleteJobAsync(jobId);
+
+                                        Console.WriteLine(
+                                                $"Deleted job storage: {jobId}"
+                                        );
                                 }
                                 catch (Exception e)
                                 {
                                         Console.WriteLine(e);
                                 }
-
-                                return Task.CompletedTask;
                         });
 
                         return PhysicalFile(
