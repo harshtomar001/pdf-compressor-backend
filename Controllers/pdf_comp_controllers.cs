@@ -62,7 +62,7 @@ namespace pdf_compressor.Controllers
                                 JobId = jobId,
                                 InputPath = inputPath,
                                 OutputPath = outputPath,
-                                Status = "Queued"
+                                Status = JobStatus.Queued
 
                         };
                         
@@ -110,7 +110,7 @@ namespace pdf_compressor.Controllers
                                 return BadRequest("Invalid job data");
                         }
 
-                        if (job.Status != "Completed")
+                        if (job.Status != JobStatus.Completed)
                         {
                                 return BadRequest(
                                         $"Job status: {job.Status}"

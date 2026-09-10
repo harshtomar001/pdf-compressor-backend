@@ -46,7 +46,7 @@ public class PdfWorker : BackgroundService
 
                 try
                 {
-                    job.Status = "Processing";
+                    job.Status = JobStatus.Processing;
                     
                     _jobService.UpdateJob(job);
 
@@ -85,7 +85,7 @@ public class PdfWorker : BackgroundService
                         stoppingToken);
 
                     // Compression completed successfully
-                    job.Status = "Completed";
+                    job.Status = JobStatus.Completed;
                     _jobService.UpdateJob(job);
 
                     await _fileStorage.SaveJobAsync(
@@ -131,7 +131,7 @@ public class PdfWorker : BackgroundService
                 }
                 catch (Exception ex)
                 {
-                    job.Status = "Failed";
+                    job.Status = JobStatus.Failed;
                     _jobService.UpdateJob(job);
 
                     Console.WriteLine($"Worker error for Job: {job.JobId}");
