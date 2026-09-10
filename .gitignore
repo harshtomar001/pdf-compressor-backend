@@ -1,0 +1,31 @@
+# Build output
+bin/
+obj/
+
+# IDE
+.idea/
+.vs/
+.vscode/
+
+# Runtime generated files
+PDF_folder/
+
+# User generated PDFs
+*.pdf
+
+# Local environment / secrets
+.env
+.env.*
+!.env.example
+
+# ASP.NET / .NET local files
+appsettings.Development.json
+appsettings.Production.json
+
+# User-specific files
+*.user
+*.suo
+
+# OS files
+.DS_Store
+Thumbs.db

@@ -1,0 +1,25 @@
+﻿<Project Sdk="Microsoft.NET.Sdk.Web">
+
+    <PropertyGroup>
+        <TargetFramework>net10.0</TargetFramework>
+        <Nullable>enable</Nullable>
+        <ImplicitUsings>enable</ImplicitUsings>
+    </PropertyGroup>
+    
+    <ItemGroup>
+        <PackageReference Include="Microsoft.AspNetCore.OpenApi" Version="10.0.8" />
+    </ItemGroup>
+    
+    <ItemGroup>
+      <_ContentIncludedByDefault Remove="PDF_folder\5242f47c-9b18-4335-833b-df06383ad989\job.json" />
+      <_ContentIncludedByDefault Remove="PDF_folder\53243a2c-03cd-446f-a432-2f68ca9ecc51\job.json" />
+      <_ContentIncludedByDefault Remove="PDF_folder\b81002cb-5df7-4f1c-a752-224d1ebf3372\job.json" />
+      <_ContentIncludedByDefault Remove="PDF_folder\1b43f8bd-aa84-407e-8d94-ec7edc78975b\job.json" />
+      <_ContentIncludedByDefault Remove="PDF_folder\3ed44fb3-16c2-4ea5-97a8-705b7502b29b\job.json" />
+    </ItemGroup>
+    
+    <ItemGroup>
+      <Folder Include="PDF_folder\" />
+    </ItemGroup>
+
+</Project>

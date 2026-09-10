@@ -1,0 +1,6 @@
+﻿@PdfStudioApi_HostAddress = http://localhost:6464
+
+GET {{pdf_compressor_HostAddress}}
+Accept: application/json
+
+###
