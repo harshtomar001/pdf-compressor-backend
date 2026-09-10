@@ -5,6 +5,8 @@ using Microsoft.AspNetCore.SignalR;
 using pdf_compressor.Hubs;
 using pdf_compressor.Models;
 using pdf_compressor.Service;
+using pdf_compressor.Services.Jobs;
+using pdf_compressor.Services.Queue;
 
 namespace pdf_compressor.Controllers
 {
@@ -15,13 +17,15 @@ namespace pdf_compressor.Controllers
         public class PdfCompressorController: ControllerBase
         {
                 
-                private readonly PdfQueueService _queue;
+                private readonly IPdfQueue _queue;
+                private readonly IJobService _jobService;   
                 private readonly IHubContext<PdfHub> _hub;
 
-                public PdfCompressorController(PdfQueueService _queue,IHubContext<PdfHub> hub)
+                public PdfCompressorController(IPdfQueue _queue,IJobService jobService,IHubContext<PdfHub> hub)
                 {
                         this._queue = _queue;
                         this._hub = hub;
+                        this._jobService = jobService;
                 }
 
                 
@@ -73,7 +77,9 @@ namespace pdf_compressor.Controllers
                         
                         Console.WriteLine(jobFile);
 
+                        _jobService.AddJob(pdfJob);
                         _queue.Enqueue(pdfJob);
+                        
                         
                         return Ok(new
                         {
@@ -86,23 +92,11 @@ namespace pdf_compressor.Controllers
                 [HttpGet("get_compress_PDF")]
                 public async Task<IActionResult> GetCompress(string jobId)
                 {
-                        string folder = Path.Combine("PDF_folder", jobId);
-
-                        string jobFile = Path.Combine(folder, "job.json");
-
-                        if (!System.IO.File.Exists(jobFile))
-                        {
-                                return NotFound("Job not found");
-                        }
-
-                        PdfJob? job =
-                                JsonSerializer.Deserialize<PdfJob>(
-                                        await System.IO.File.ReadAllTextAsync(jobFile)
-                                );
+                        PdfJob? job = _jobService.GetJob(jobId);
 
                         if (job == null)
                         {
-                                return BadRequest("Invalid job data");
+                                return NotFound("Job not found");
                         }
 
                         if (job.Status != "Completed")
@@ -111,19 +105,19 @@ namespace pdf_compressor.Controllers
                                         $"Job status: {job.Status}"
                                 );
                         }
-                        
+
+                        string folder = Path.Combine("PDF_folder", jobId);
+
                         Response.OnCompleted(() =>
                         {
                                 try
                                 {
                                         Directory.Delete(folder, true);
-                                        Console.WriteLine($"Deletd {folder}");
-
+                                        Console.WriteLine($"Deleted {folder}");
                                 }
                                 catch (Exception e)
                                 {
                                         Console.WriteLine(e);
-                                        throw;
                                 }
 
                                 return Task.CompletedTask;

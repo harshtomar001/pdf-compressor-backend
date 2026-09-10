@@ -1,6 +1,9 @@
 ﻿using Microsoft.AspNetCore.Http.Features;
 using pdf_compressor.Hubs;
 using pdf_compressor.Service;
+using pdf_compressor.Services.Compression;
+using pdf_compressor.Services.Jobs;
+using pdf_compressor.Services.Queue;
 using pdf_compressor.Workers;
 
 public class Program
@@ -11,9 +14,16 @@ public class Program
         builder.Services.AddOpenApi();
 
         builder.Services.AddControllers();
-        builder.Services.AddSingleton<GhostscriptService>(); // only one object for entire application
-        builder.Services.AddSingleton<MuPdfService>();
-        builder.Services.AddSingleton<QPdfService>(); 
+        
+        builder.Services.AddSingleton<IPdfCompressionEngine, GhostscriptEngine>(); // only one object for entire application
+        builder.Services.AddSingleton<MuPdfEngine>();
+        builder.Services.AddSingleton<QPdfEngine>();
+        
+        builder.Services.AddSingleton<CompressionRouter>();
+        
+        builder.Services.AddSingleton<IPdfQueue, PdfQueue>();
+        builder.Services.AddSingleton<IJobService, JobService>();
+        
         builder.Services.AddSignalR();
         builder.Services.AddSingleton<PdfQueueService>();
         builder.Services.AddHostedService<PdfWorker>();
