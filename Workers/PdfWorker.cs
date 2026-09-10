@@ -1,9 +1,8 @@
-﻿using pdf_compressor.Hubs;
+﻿using System.Text.Json;
+using pdf_compressor.Hubs;
 using pdf_compressor.Models;
 using pdf_compressor.Services.Compression;
 using Microsoft.AspNetCore.SignalR;
-using pdf_compressor.Helper;
-using pdf_compressor.Service;
 using pdf_compressor.Services.Jobs;
 using pdf_compressor.Services.Queue;
 using pdf_compressor.Services.Storage;
@@ -17,7 +16,7 @@ public class PdfWorker : BackgroundService
     private readonly CompressionRouter _compressionRouter;
     private readonly IHubContext<PdfHub> _hub;
     
-    
+    private readonly IFileStorage _fileStorage;
     
     private readonly SemaphoreSlim workerLimit = new(3);
 
@@ -25,13 +24,15 @@ public class PdfWorker : BackgroundService
         IPdfQueue queue,
         IJobService jobService,
         CompressionRouter compressionRouter,
-        IHubContext<PdfHub> hub
+        IHubContext<PdfHub> hub,
+        IFileStorage fileStorage
         )
     {
         _queue = queue;
         _jobService = jobService;
         _compressionRouter = compressionRouter;
         _hub = hub;
+        this._fileStorage = fileStorage;
     }
 
     protected override async Task ExecuteAsync(
@@ -49,7 +50,16 @@ public class PdfWorker : BackgroundService
                     
                     _jobService.UpdateJob(job);
 
-                    await JobStorage.SaveJobAsync(job);
+                    await _fileStorage.SaveJobAsync(
+                        job.JobId,
+                        JsonSerializer.Serialize(
+                            job,
+                            new JsonSerializerOptions
+                            {
+                                WriteIndented = true
+                            }
+                        )
+                    );
 
                     Console.WriteLine($"Processing Job: {job.JobId}");
 
@@ -78,9 +88,18 @@ public class PdfWorker : BackgroundService
                     job.Status = "Completed";
                     _jobService.UpdateJob(job);
 
-                    await JobStorage.SaveJobAsync(job);
+                    await _fileStorage.SaveJobAsync(
+                        job.JobId,
+                        JsonSerializer.Serialize(
+                            job,
+                            new JsonSerializerOptions
+                            {
+                                WriteIndented = true
+                            }
+                        )
+                    );
 
-                    NotifyQueuePositions();
+                    await NotifyQueuePositions();
 
                     // Complete waiting tasks
                     job.Completion.SetResult(true);
@@ -133,7 +152,16 @@ public class PdfWorker : BackgroundService
                         // the original compression error.
                     }
 
-                    await JobStorage.SaveJobAsync(job);
+                    await _fileStorage.SaveJobAsync(
+                        job.JobId,
+                        JsonSerializer.Serialize(
+                            job,
+                            new JsonSerializerOptions
+                            {
+                                WriteIndented = true
+                            }
+                        )
+                    );
 
                     job.Completion.SetResult(false);
 
