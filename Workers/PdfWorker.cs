@@ -1,5 +1,4 @@
-﻿using System.Text.Json;
-using pdf_compressor.Hubs;
+﻿using pdf_compressor.Hubs;
 using pdf_compressor.Models;
 using pdf_compressor.Services.Compression;
 using Microsoft.AspNetCore.SignalR;
@@ -18,7 +17,6 @@ public class PdfWorker : BackgroundService
     
     private readonly IFileStorage _fileStorage;
     
-    private readonly SemaphoreSlim workerLimit = new(3);
 
     public PdfWorker(
         IPdfQueue queue,
@@ -42,7 +40,7 @@ public class PdfWorker : BackgroundService
         {
             if (_queue.TryDequeue(out PdfJob? job))
             {
-                await workerLimit.WaitAsync(stoppingToken);
+              
 
                 try
                 {
@@ -142,7 +140,7 @@ public class PdfWorker : BackgroundService
                 }
                 finally
                 {
-                    workerLimit.Release();
+                    
                 }
             }
             else
