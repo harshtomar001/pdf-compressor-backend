@@ -57,14 +57,11 @@ namespace pdf_compressor.Controllers
                         
                         Console.WriteLine($"{inputPath} -> {outputPath} -> {jobId}");
 
-                        PdfJob pdfJob = new PdfJob
-                        {
-                                JobId = jobId,
-                                InputPath = inputPath,
-                                OutputPath = outputPath,
-                                Status = JobStatus.Queued
-
-                        };
+                        PdfJob pdfJob = _jobService.CreateJob(
+                                jobId,
+                                inputPath,
+                                outputPath
+                        );
                         
                         string json = JsonSerializer.Serialize(
                                 pdfJob,

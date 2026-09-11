@@ -5,6 +5,20 @@ namespace pdf_compressor.Services.Jobs;
 public class JobService : IJobService
 {
     private readonly ConcurrentDictionary<string, PdfJob> _jobs = new();
+    
+    public PdfJob CreateJob(
+        string jobId,
+        string inputPath,
+        string outputPath)
+    {
+        return new PdfJob
+        {
+            JobId = jobId,
+            InputPath = inputPath,
+            OutputPath = outputPath,
+            Status = JobStatus.Queued
+        };
+    }
 
     public void AddJob(PdfJob job)
     {
