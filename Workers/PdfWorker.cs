@@ -50,17 +50,8 @@ public class PdfWorker : BackgroundService
                     
                     _jobService.UpdateJob(job);
 
-                    await _fileStorage.SaveJobAsync(
-                        job.JobId,
-                        JsonSerializer.Serialize(
-                            job,
-                            new JsonSerializerOptions
-                            {
-                                WriteIndented = true
-                            }
-                        )
-                    );
-
+                    await _fileStorage.SaveJobAsync(job);
+                    
                     Console.WriteLine($"Processing Job: {job.JobId}");
 
                     // Notify client that compression has started
@@ -88,16 +79,7 @@ public class PdfWorker : BackgroundService
                     job.Status = JobStatus.Completed;
                     _jobService.UpdateJob(job);
 
-                    await _fileStorage.SaveJobAsync(
-                        job.JobId,
-                        JsonSerializer.Serialize(
-                            job,
-                            new JsonSerializerOptions
-                            {
-                                WriteIndented = true
-                            }
-                        )
-                    );
+                    await _fileStorage.SaveJobAsync(job);
 
                     await NotifyQueuePositions();
 
@@ -152,16 +134,7 @@ public class PdfWorker : BackgroundService
                         // the original compression error.
                     }
 
-                    await _fileStorage.SaveJobAsync(
-                        job.JobId,
-                        JsonSerializer.Serialize(
-                            job,
-                            new JsonSerializerOptions
-                            {
-                                WriteIndented = true
-                            }
-                        )
-                    );
+                    await _fileStorage.SaveJobAsync(job);
 
                     job.Completion.SetResult(false);
 

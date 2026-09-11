@@ -1,4 +1,6 @@
-﻿using Microsoft.AspNetCore.Http;
+﻿using System.Text.Json;
+using Microsoft.AspNetCore.Http;
+using pdf_compressor.Models;
 
 namespace pdf_compressor.Services.Storage;
 
@@ -67,11 +69,11 @@ public class LocalFileStorage : IFileStorage
         );
     }
 
-    public async Task SaveJobAsync(string jobId, string json)
+    public async Task SaveJobAsync(PdfJob job)
     {
         string jobFolder = Path.Combine(
             _basePath,
-            jobId
+            job.JobId
         );
 
         Directory.CreateDirectory(jobFolder);
@@ -79,6 +81,14 @@ public class LocalFileStorage : IFileStorage
         string jobFile = Path.Combine(
             jobFolder,
             "job.json"
+        );
+
+        string json = JsonSerializer.Serialize(
+            job,
+            new JsonSerializerOptions
+            {
+                WriteIndented = true
+            }
         );
 
         await File.WriteAllTextAsync(

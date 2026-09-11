@@ -63,16 +63,7 @@ namespace pdf_compressor.Controllers
                                 outputPath
                         );
                         
-                        string json = JsonSerializer.Serialize(
-                                pdfJob,
-                                new JsonSerializerOptions
-                                {
-                                        WriteIndented = true
-                                });
-                        
-                        Console.WriteLine(json);
-
-                        await _fileStorage.SaveJobAsync(jobId, json);
+                        await _fileStorage.SaveJobAsync(pdfJob);
 
                         Console.WriteLine($"Saved job data for: {jobId}");
 

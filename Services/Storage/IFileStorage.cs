@@ -1,11 +1,13 @@
 ﻿namespace pdf_compressor.Services.Storage;
 
+using pdf_compressor.Models;
 
 public interface IFileStorage
 {
-    Task<(string inputPath, string outputPath, string jobId)> CreateJobFilesAsync(IFormFile file);
+    Task<(string inputPath, string outputPath, string jobId)>
+        CreateJobFilesAsync(IFormFile file);
 
-    Task SaveJobAsync(string jobId, string json);
+    Task SaveJobAsync(PdfJob job);
 
     Task<string?> ReadJobAsync(string jobId);
 
