@@ -21,9 +21,10 @@ public class Program
 
         builder.Services.AddControllers();
         
-        builder.Services.AddSingleton<IPdfCompressionEngine, GhostscriptEngine>(); // only one object for entire application
+        builder.Services.AddSingleton<GhostscriptEngine>();
         builder.Services.AddSingleton<MuPdfEngine>();
         builder.Services.AddSingleton<QPdfEngine>();
+        // only one object for entire application
         
         builder.Services.AddSingleton<CompressionRouter>();
         

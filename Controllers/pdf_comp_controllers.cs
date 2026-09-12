@@ -43,7 +43,7 @@ namespace pdf_compressor.Controllers
                 }
 
                 [HttpPost("compress_PDF")]
-                public async Task<IActionResult> Compress( IFormFile file)
+                public async Task<IActionResult> Compress([FromForm] CompressionRequest request)
                 {
                         string inputPath;
                         string outputPath;
@@ -51,7 +51,8 @@ namespace pdf_compressor.Controllers
                         
                         Console.WriteLine("1. File received");
                         
-                        (inputPath, outputPath, jobId) = await _fileStorage.CreateJobFilesAsync(file);
+                        (inputPath, outputPath, jobId) = 
+                                await _fileStorage.CreateJobFilesAsync(request.File);
                         
                         Console.WriteLine("1. File path done");
                         
@@ -61,10 +62,10 @@ namespace pdf_compressor.Controllers
                                 jobId,
                                 inputPath,
                                 outputPath,
-                                "ghostscript",
+                                request.Engine,
                                 new CompressionOptions
                                 {
-                                        Profile = "balanced"
+                                        Profile = request.Profile,
                                 }
                         );
                         

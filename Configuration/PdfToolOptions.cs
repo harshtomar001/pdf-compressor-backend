@@ -8,3 +8,13 @@ public class PdfToolOptions
 
     public string QPdf { get; set; } = "";
 }
+
+//          appsettings.json
+//                ↓
+//          PdfToolOptions
+//                ↓
+//      Dependency Injection
+//                ↓
+// ┌──────────────┼──────────────┐
+// ↓              ↓              ↓
+// GhostscriptEngine  MuPdfEngine   QPdfEngine
