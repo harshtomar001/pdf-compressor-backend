@@ -60,7 +60,12 @@ namespace pdf_compressor.Controllers
                         PdfJob pdfJob = _jobService.CreateJob(
                                 jobId,
                                 inputPath,
-                                outputPath
+                                outputPath,
+                                "ghostscript",
+                                new CompressionOptions
+                                {
+                                        Profile = "balanced"
+                                }
                         );
                         
                         await _fileStorage.SaveJobAsync(pdfJob);

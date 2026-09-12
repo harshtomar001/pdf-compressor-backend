@@ -7,7 +7,9 @@ public interface IJobService
     PdfJob CreateJob(
         string jobId,
         string inputPath,
-        string outputPath);
+        string outputPath,
+        string compressionEngine,
+        CompressionOptions compression);
 
     void AddJob(PdfJob job);
 

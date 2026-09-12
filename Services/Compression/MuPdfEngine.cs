@@ -1,5 +1,7 @@
 ﻿using System.Diagnostics;
 using pdf_compressor.Models;
+using Microsoft.Extensions.Options;
+using pdf_compressor.Configuration;
 
 namespace pdf_compressor.Services.Compression;
 
@@ -7,10 +9,15 @@ public class MuPdfEngine : IPdfCompressionEngine
 {
     private readonly string _mupdfPath;
 
-    public MuPdfEngine(IConfiguration configuration)
+    public MuPdfEngine(IOptions<PdfToolOptions> options)
     {
-        _mupdfPath = configuration["PdfTools:MuPdf"]
-                     ?? throw new Exception("MuPDF path not configured");
+        _mupdfPath = options.Value.MuPdf;
+        
+        if (string.IsNullOrWhiteSpace(_mupdfPath))
+        {
+            throw new Exception("Ghostscript path not configured");
+        }
+        
     }
 
     public async Task CompressAsync(

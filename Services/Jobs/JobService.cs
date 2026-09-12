@@ -9,14 +9,18 @@ public class JobService : IJobService
     public PdfJob CreateJob(
         string jobId,
         string inputPath,
-        string outputPath)
+        string outputPath,
+        string compressionEngine,
+        CompressionOptions compression)
     {
         return new PdfJob
         {
             JobId = jobId,
             InputPath = inputPath,
             OutputPath = outputPath,
-            Status = JobStatus.Queued
+            Status = JobStatus.Queued,
+            CompressionEngine = compressionEngine,
+            Compression = compression
         };
     }
 

@@ -1,5 +1,7 @@
 ﻿using System.Diagnostics;
 using pdf_compressor.Models;
+using Microsoft.Extensions.Options;
+using pdf_compressor.Configuration;
 
 namespace pdf_compressor.Services.Compression;
 
@@ -7,10 +9,14 @@ public class GhostscriptEngine : IPdfCompressionEngine
 {
     private readonly string _gsPath;
 
-    public GhostscriptEngine(IConfiguration configuration)
+    public GhostscriptEngine(IOptions<PdfToolOptions> options)
     {
-        _gsPath = configuration["PdfTools:Ghostscript"]
-                  ?? throw new Exception("Ghostscript path not configured");
+        _gsPath = options.Value.Ghostscript;
+
+        if (string.IsNullOrWhiteSpace(_gsPath))
+        {
+            throw new Exception("Ghostscript path not configured");
+        }
     }
 
     public async Task CompressAsync(

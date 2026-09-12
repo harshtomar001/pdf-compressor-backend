@@ -5,12 +5,18 @@ using pdf_compressor.Services.Jobs;
 using pdf_compressor.Services.Queue;
 using pdf_compressor.Services.Storage;
 using pdf_compressor.Workers;
+using pdf_compressor.Configuration;
 
 public class Program
 {
     public static void Main(string[] args)
     {
         var builder = WebApplication.CreateBuilder(args);
+        
+        builder.Services.Configure<PdfToolOptions>(
+            builder.Configuration.GetSection("PdfTools")
+        );
+        
         builder.Services.AddOpenApi();
 
         builder.Services.AddControllers();

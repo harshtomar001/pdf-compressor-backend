@@ -1,5 +1,7 @@
 ﻿using System.Diagnostics;
 using pdf_compressor.Models;
+using Microsoft.Extensions.Options;
+using pdf_compressor.Configuration;
 
 namespace pdf_compressor.Services.Compression;
 
@@ -7,10 +9,15 @@ public class QPdfEngine : IPdfCompressionEngine
 {
     private readonly string _qpdfPath;
 
-    public QPdfEngine(IConfiguration configuration)
+    public QPdfEngine(IOptions<PdfToolOptions> options)
     {
-        _qpdfPath = configuration["PdfTools:QPdf"]
-                    ?? throw new Exception("QPDF path not configured");
+        _qpdfPath = options.Value.QPdf;
+        
+        if (string.IsNullOrWhiteSpace(_qpdfPath))
+        {
+            throw new Exception("Ghostscript path not configured");
+        }
+        
     }
 
     public async Task CompressAsync(

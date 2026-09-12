@@ -61,16 +61,15 @@ public class PdfWorker : BackgroundService
                             stoppingToken);
 
                     // Get compression engine from router
-                    var engine = _compressionRouter.GetEngine("ghostscript");
+                    var engine = _compressionRouter.GetEngine(
+                        job.CompressionEngine
+                        );
 
                     // Perform compression
                     await engine.CompressAsync(
                         job.InputPath,
                         job.OutputPath,
-                        new CompressionOptions
-                        {
-                            Profile = "balanced"
-                        },
+                        job.Compression,
                         stoppingToken);
 
                     // Compression completed successfully
