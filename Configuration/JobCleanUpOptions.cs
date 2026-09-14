@@ -3,4 +3,6 @@
 public class JobCleanupOptions
 {
     public int RetentionMinutes { get; set; } = 120;
+
+    public int IntervalMinutes { get; set; } = 10;
 }

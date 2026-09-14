@@ -10,6 +10,10 @@ public class JobCleanupService
 {
     private readonly IJobService _jobService;
     private readonly JobCleanupOptions _options;
+    
+    
+    public TimeSpan CleanupInterval =>
+        TimeSpan.FromMinutes(_options.IntervalMinutes);
 
     public JobCleanupService(
         IJobService jobService,

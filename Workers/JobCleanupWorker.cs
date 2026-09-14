@@ -28,7 +28,7 @@ public class JobCleanupWorker : BackgroundService
             }
 
             await Task.Delay(
-                TimeSpan.FromMinutes(10),
+                _cleanupService.CleanupInterval,
                 stoppingToken
             );
         }
