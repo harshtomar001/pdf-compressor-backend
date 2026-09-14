@@ -89,6 +89,7 @@ public class PdfWorker : BackgroundService
         try
         {
             job.Status = JobStatus.Processing;
+            job.ErrorMessage = null;
 
             _jobService.UpdateJob(job);
 
@@ -158,14 +159,35 @@ public class PdfWorker : BackgroundService
         
         catch (Exception ex)
         {
+            
+            try
+            {
+                if (File.Exists(job.OutputPath))
+                {
+                    File.Delete(job.OutputPath);
+
+                    Console.WriteLine(
+                        $"Deleted partial output: {job.OutputPath}"
+                    );
+                }
+            }
+            catch (Exception cleanupEx)
+            {
+                Console.WriteLine(
+                    $"Failed to delete partial output: {cleanupEx}"
+                );
+            }
+            
+            
             job.Status = JobStatus.Failed;
+            job.ErrorMessage = ex.Message;
 
             _jobService.UpdateJob(job);
 
             Console.WriteLine(
                 $"Worker error for Job: {job.JobId}");
-
             Console.WriteLine(ex.ToString());
+
 
             try
             {
