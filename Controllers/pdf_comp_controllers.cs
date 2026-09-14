@@ -93,18 +93,11 @@ namespace pdf_compressor.Controllers
                 [HttpGet("get_compress_PDF")]
                 public async Task<IActionResult> GetCompress(string jobId)
                 {
-                        string? json = await _fileStorage.ReadJobAsync(jobId);
-
-                        if (json == null)
-                        {
-                                return NotFound("Job not found");
-                        }
-
-                        PdfJob? job = JsonSerializer.Deserialize<PdfJob>(json);
+                        PdfJob? job = await _jobService.GetJobAsync(jobId);
 
                         if (job == null)
                         {
-                                return BadRequest("Invalid job data");
+                                return NotFound("Job not found");
                         }
 
                         if (job.Status != JobStatus.Completed)

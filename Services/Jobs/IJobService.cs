@@ -15,6 +15,8 @@ public interface IJobService
 
     PdfJob? GetJob(string jobId);
 
+    Task<PdfJob?> GetJobAsync(string jobId);
+
     void UpdateJob(PdfJob job);
 
     void RemoveJob(string jobId);
