@@ -93,7 +93,11 @@ namespace pdf_compressor.Controllers
 
                         if (job == null)
                         {
-                                return NotFound("Job not found");
+                                return NotFound(new ApiError
+                                {
+                                        Error = "JobNotFound",
+                                        Message = "Job not found."
+                                });
                         }
 
                         if (job.Status != JobStatus.Completed)
