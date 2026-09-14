@@ -33,6 +33,14 @@ public class Program
         
         builder.Services.AddSingleton<IFileStorage, LocalFileStorage>();
         
+        builder.Services.Configure<JobCleanupOptions>(
+            builder.Configuration.GetSection("JobCleanup")
+        );
+        
+        builder.Services.AddSingleton<JobCleanupService>();
+        
+        builder.Services.AddHostedService<JobCleanupWorker>();
+        
         builder.Services.AddSignalR();
         builder.Services.AddHostedService<PdfWorker>();
         
