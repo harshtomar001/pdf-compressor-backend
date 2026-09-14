@@ -57,6 +57,10 @@ namespace pdf_compressor.Controllers
                         Console.WriteLine("1. File path done");
                         
                         Console.WriteLine($"{inputPath} -> {outputPath} -> {jobId}");
+                        
+                        Console.WriteLine($"Profile {request.Profile}");
+                        Console.WriteLine($"Engine: {request.Engine}");
+                       
 
                         PdfJob pdfJob = _jobService.CreateJob(
                                 jobId,

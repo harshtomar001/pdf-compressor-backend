@@ -9,6 +9,8 @@ public interface IPdfQueue
     bool TryDequeue(out PdfJob? job);
 
     IReadOnlyList<PdfJob> GetQueuedJobs();
-    
+
     int GetPosition(string jobId);
+
+    Task WaitForJobAsync(CancellationToken cancellationToken);
 }

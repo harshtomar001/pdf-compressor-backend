@@ -5,11 +5,13 @@ namespace pdf_compressor.Services.Queue;
 
 public class PdfQueue : IPdfQueue
 {
+    private readonly SemaphoreSlim _signal = new(0);
     private readonly ConcurrentQueue<PdfJob> _queue = new();
 
     public void Enqueue(PdfJob job)
     {
         _queue.Enqueue(job);
+        _signal.Release();
     }
 
     public bool TryDequeue(out PdfJob? job)
@@ -36,4 +38,11 @@ public class PdfQueue : IPdfQueue
 
         return 0;
     }
+    
+    public async Task WaitForJobAsync(
+        CancellationToken cancellationToken)
+    {
+        await _signal.WaitAsync(cancellationToken); // Wait until the semaphore has a permit available
+    }
+    
 }
