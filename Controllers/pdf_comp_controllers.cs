@@ -129,7 +129,29 @@ namespace pdf_compressor.Controllers
                                 "compressed.pdf"
                         );
                 }
+                
+                
+                [HttpGet("status/{jobId}")]
+                public async Task<IActionResult> GetStatus(string jobId)
+                {
+                        PdfJob? job = await _jobService.GetJobAsync(jobId);
 
+                        if (job == null)
+                        {
+                                return NotFound(new
+                                {
+                                        message = "Job not found"
+                                });
+                        }
+
+                        return Ok(new
+                        {
+                                jobId = job.JobId,
+                                status = job.Status.ToString(),
+                                engine = job.CompressionEngine,
+                                profile = job.Compression.Profile
+                        });
+                }
 
         }
         
