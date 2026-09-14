@@ -1,5 +1,6 @@
 ﻿using System.Text.Json;
 using Microsoft.AspNetCore.Http;
+using pdf_compressor.Exceptions;
 using pdf_compressor.Models;
 
 namespace pdf_compressor.Services.Storage;
@@ -21,7 +22,9 @@ public class LocalFileStorage : IFileStorage
     {
         if (file == null || file.Length == 0)
         {
-            throw new Exception("Corrupted file");
+            throw new InvalidFileException(
+                "The uploaded file is empty."
+            );
         }
 
         string fileExtension = Path.GetExtension(file.FileName);
@@ -31,7 +34,9 @@ public class LocalFileStorage : IFileStorage
                 ".pdf",
                 StringComparison.OrdinalIgnoreCase))
         {
-            throw new Exception("Only PDF files are allowed");
+            throw new InvalidFileException(
+                "Only PDF files are allowed."
+            );
         }
 
         string jobId = Guid.NewGuid().ToString();
