@@ -22,4 +22,7 @@ public interface IJobService
     void RemoveJob(string jobId);
 
     IReadOnlyCollection<PdfJob> GetAllJobs();
+    
+    Task RemoveJobAsync(string jobId);
+    
 }

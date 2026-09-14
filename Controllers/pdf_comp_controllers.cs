@@ -1,6 +1,4 @@
-﻿using System.Diagnostics;
-using System.Text.Json;
-using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.SignalR;
 using pdf_compressor.Hubs;
 using pdf_compressor.Models;
@@ -13,7 +11,6 @@ namespace pdf_compressor.Controllers
         
         [ApiController]
         [Route("[controller]")]
-        
         public class PdfCompressorController: ControllerBase
         {
                 
@@ -38,8 +35,7 @@ namespace pdf_compressor.Controllers
                 [HttpGet("hello")]
                 public IActionResult HelloWorld()
                 {
-
-                        return Ok("Hello World!");
+                        return Ok("Hello World!\n PDF COMPRESSION BACKEND");
                 }
 
                 [HttpPost("compress_PDF")]
@@ -111,7 +107,7 @@ namespace pdf_compressor.Controllers
                         {
                                 try
                                 {
-                                        await _fileStorage.DeleteJobAsync(jobId);
+                                        await _jobService.RemoveJobAsync(jobId);
 
                                         Console.WriteLine(
                                                 $"Deleted job storage: {jobId}"

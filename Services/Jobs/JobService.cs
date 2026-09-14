@@ -83,9 +83,19 @@ public class JobService : IJobService
     {
         _jobs.TryRemove(jobId, out _);
     }
+    
+
+    public async Task RemoveJobAsync(string jobId)
+    {
+        _jobs.TryRemove(jobId, out _);
+
+        await _fileStorage.DeleteJobAsync(jobId);
+    }
 
     public IReadOnlyCollection<PdfJob> GetAllJobs()
     {
         return _jobs.Values.ToList().AsReadOnly();
     }
+    
+    
 }
