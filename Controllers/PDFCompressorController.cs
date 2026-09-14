@@ -1,5 +1,6 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.SignalR;
+using pdf_compressor.Exceptions;
 using pdf_compressor.Hubs;
 using pdf_compressor.Models;
 using pdf_compressor.Services.Jobs;
@@ -47,8 +48,31 @@ namespace pdf_compressor.Controllers
                         
                         Console.WriteLine("1. File received");
                         
-                        (inputPath, outputPath, jobId) = 
-                                await _fileStorage.CreateJobFilesAsync(request.File);
+                        try
+                        {
+                                (inputPath, outputPath, jobId) =
+                                        await _fileStorage.CreateJobFilesAsync(request.File);
+                        }
+                        catch (InvalidFileException ex)
+                        {
+                                return BadRequest(new ApiError
+                                {
+                                        Error = "InvalidFile",
+                                        Message = ex.Message
+                                });
+                        }
+                        catch (Exception ex)
+                        {
+                                Console.WriteLine(
+                                        $"File storage error: {ex}"
+                                );
+
+                                return StatusCode(500, new ApiError
+                                {
+                                        Error = "StorageError",
+                                        Message = "The file could not be stored."
+                                });
+                        }
                         
                         Console.WriteLine("1. File path done");
                         
@@ -102,9 +126,11 @@ namespace pdf_compressor.Controllers
 
                         if (job.Status != JobStatus.Completed)
                         {
-                                return BadRequest(
-                                        $"Job status: {job.Status}"
-                                );
+                                return BadRequest(new ApiError
+                                {
+                                        Error = "JobNotCompleted",
+                                        Message = $"Job status: {job.Status}."
+                                });
                         }
 
                         Response.OnCompleted(async () =>
@@ -138,9 +164,23 @@ namespace pdf_compressor.Controllers
 
                         if (job == null)
                         {
-                                return NotFound(new
+                                return NotFound(new ApiError
                                 {
-                                        message = "Job not found"
+                                        Error = "JobNotFound",
+                                        Message = "Job not found."
+                                });
+                        }
+
+                        if (job.Status == JobStatus.Failed)
+                        {
+                                return Ok(new
+                                {
+                                        jobId = job.JobId,
+                                        status = job.Status.ToString(),
+                                        engine = job.CompressionEngine,
+                                        profile = job.Compression.Profile,
+                                        error = "CompressionFailed",
+                                        message = "PDF compression failed."
                                 });
                         }
 

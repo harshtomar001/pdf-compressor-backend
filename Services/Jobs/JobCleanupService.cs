@@ -1,6 +1,7 @@
 ﻿using pdf_compressor.Configuration;
 using pdf_compressor.Models;
 using Microsoft.Extensions.Options;
+using pdf_compressor.Services.Storage;
 
 
 namespace pdf_compressor.Services.Jobs;
@@ -9,6 +10,7 @@ namespace pdf_compressor.Services.Jobs;
 public class JobCleanupService
 {
     private readonly IJobService _jobService;
+    private readonly IFileStorage _fileStorage;
     private readonly JobCleanupOptions _options;
     
     
@@ -17,15 +19,17 @@ public class JobCleanupService
 
     public JobCleanupService(
         IJobService jobService,
+        IFileStorage fileStorage,
         IOptions<JobCleanupOptions> options)
     {
         _jobService = jobService;
+        _fileStorage = fileStorage;
         _options = options.Value;
     }
 
     public async Task CleanupAsync()
     {
-        var jobs = _jobService.GetAllJobs();
+        var jobs = await _fileStorage.GetStoredJobsAsync();
 
         DateTime cutoff = DateTime.UtcNow.AddMinutes(
             -_options.RetentionMinutes
@@ -34,6 +38,12 @@ public class JobCleanupService
         foreach (PdfJob job in jobs)
         {
             if (job.CreatedAt >= cutoff)
+            {
+                continue;
+            }
+            
+            if (job.Status != JobStatus.Completed &&
+                job.Status != JobStatus.Failed)
             {
                 continue;
             }

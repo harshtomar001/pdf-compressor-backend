@@ -12,4 +12,7 @@ public interface IFileStorage
     Task<string?> ReadJobAsync(string jobId);
 
     Task DeleteJobAsync(string jobId);
+    
+    Task<IReadOnlyList<PdfJob>> GetStoredJobsAsync();
+    
 }

@@ -132,4 +132,50 @@ public class LocalFileStorage : IFileStorage
 
         return Task.CompletedTask;
     }
+    
+    public async Task<IReadOnlyList<PdfJob>> GetStoredJobsAsync()
+    {
+        var jobs = new List<PdfJob>();
+
+        if (!Directory.Exists(_basePath))
+        {
+            return jobs.AsReadOnly();
+        }
+
+        foreach (string jobFolder in Directory.GetDirectories(_basePath))
+        {
+            string jobFile = Path.Combine(
+                jobFolder,
+                "job.json"
+            );
+
+            if (!File.Exists(jobFile))
+            {
+                continue;
+            }
+
+            try
+            {
+                string json = await File.ReadAllTextAsync(jobFile);
+
+                PdfJob? job = JsonSerializer.Deserialize<PdfJob>(json);
+
+                if (job != null)
+                {
+                    jobs.Add(job);
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine(
+                    $"Failed to read stored job: {jobFile}"
+                );
+
+                Console.WriteLine(ex);
+            }
+        }
+
+        return jobs.AsReadOnly();
+    }
+    
 }
