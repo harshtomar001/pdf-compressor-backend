@@ -22,9 +22,5 @@
       <_ContentIncludedByDefault Remove="PDF_folder\9bf4a0eb-d487-4636-b149-c42062c92d65\job.json" />
       <_ContentIncludedByDefault Remove="PDF_folder\55d765d0-c107-4da3-b028-c602db9ebfc5\job.json" />
     </ItemGroup>
-    
-    <ItemGroup>
-      <Folder Include="PDF_folder\" />
-    </ItemGroup>
 
 </Project>

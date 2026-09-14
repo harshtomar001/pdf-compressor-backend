@@ -16,7 +16,7 @@ public class PdfWorker : BackgroundService
     private readonly IHubContext<PdfHub> _hub;
     private readonly IFileStorage _fileStorage;
     
-    
+    private readonly CancellationTokenSource _processingCts = new();
 
     public PdfWorker(
         IPdfQueue queue,
@@ -45,6 +45,8 @@ public class PdfWorker : BackgroundService
         await Task.WhenAll(workers); //  Wait until ALL tasks inside workers have finished.
     }
     
+    
+    
     private async Task ProcessQueueAsync(
         CancellationToken stoppingToken)
     {
@@ -52,9 +54,14 @@ public class PdfWorker : BackgroundService
         {
             await _queue.WaitForJobAsync(stoppingToken); //  waits until the queue is empty 
 
+            if (stoppingToken.IsCancellationRequested)
+            {
+                break;
+            }
+
             if (_queue.TryDequeue(out PdfJob? job) && job != null)
             {
-                await ProcessJobAsync(job, stoppingToken);
+                await ProcessJobAsync(job, _processingCts.Token);
             }
         }
     }
@@ -139,6 +146,7 @@ public class PdfWorker : BackgroundService
             Console.WriteLine(
                 $"Completed Job: {job.JobId}");
         }
+       
         catch (OperationCanceledException)
             when (stoppingToken.IsCancellationRequested)
         {
@@ -147,6 +155,7 @@ public class PdfWorker : BackgroundService
 
             return;
         }
+        
         catch (Exception ex)
         {
             job.Status = JobStatus.Failed;
@@ -179,6 +188,7 @@ public class PdfWorker : BackgroundService
             Console.WriteLine(
                 $"Failed Job: {job.JobId}");
         }
+        
     }
         
     
