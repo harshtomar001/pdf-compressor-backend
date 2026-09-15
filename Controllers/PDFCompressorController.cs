@@ -19,17 +19,20 @@ namespace pdf_compressor.Controllers
                 private readonly IJobService _jobService;   
                 private readonly IHubContext<PdfHub> _hub;
                 private readonly IFileStorage _fileStorage;
+                private readonly IJobCancellationService _jobCancellationService;
 
                 public PdfCompressorController(
                         IPdfQueue _queue,
                         IJobService jobService,
                         IFileStorage fileStorage,
-                        IHubContext<PdfHub> hub)
+                        IHubContext<PdfHub> hub,
+                        IJobCancellationService jobCancellationService)
                 {
                         this._queue = _queue;
                         this._hub = hub;
                         this._jobService = jobService;
                         this._fileStorage = fileStorage;
+                        this._jobCancellationService = jobCancellationService;
                 }
 
                 
@@ -190,6 +193,27 @@ namespace pdf_compressor.Controllers
                                 status = job.Status.ToString(),
                                 engine = job.CompressionEngine,
                                 profile = job.Compression.Profile
+                        });
+                }
+                
+                [HttpPost("cancel/{jobId}")]
+                public IActionResult CancelJob(string jobId)
+                {
+                        var cancelled = _jobCancellationService.Cancel(jobId);
+
+                        if (!cancelled)
+                        {
+                                return NotFound(new ApiError
+                                {
+                                        Error = "JobNotCancellable",
+                                        Message = "Job is not currently running or cannot be cancelled."
+                                });
+                        }
+
+                        return Ok(new
+                        {
+                                jobId,
+                                message = "Job cancellation requested."
                         });
                 }
 

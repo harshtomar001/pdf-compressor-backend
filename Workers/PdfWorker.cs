@@ -17,6 +17,8 @@ public class PdfWorker : BackgroundService
     private readonly IHubContext<PdfHub> _hub;
     private readonly IFileStorage _fileStorage;
     
+    private readonly IJobCancellationService _jobCancellationService;
+    
     private readonly CancellationTokenSource _processingCts = new();
 
     public PdfWorker(
@@ -24,7 +26,8 @@ public class PdfWorker : BackgroundService
         IJobService jobService,
         CompressionRouter compressionRouter,
         IHubContext<PdfHub> hub,
-        IFileStorage fileStorage
+        IFileStorage fileStorage,
+        IJobCancellationService jobCancellationService
     )
     {
         _queue = queue;
@@ -32,6 +35,7 @@ public class PdfWorker : BackgroundService
         _compressionRouter = compressionRouter;
         _hub = hub;
         _fileStorage = fileStorage;
+        _jobCancellationService = jobCancellationService;
     }
 
     protected override async Task ExecuteAsync(
@@ -62,7 +66,16 @@ public class PdfWorker : BackgroundService
 
             if (_queue.TryDequeue(out PdfJob? job) && job != null)
             {
-                await ProcessJobAsync(job, CancellationToken.None); // shutdown does not cancel the active Ghostscript process.
+                var jobToken = _jobCancellationService.Register(job.JobId); // register for ( if user cancel the compression then it can stop the process )
+
+                try
+                {
+                    await ProcessJobAsync(job, jobToken);
+                }
+                finally
+                {
+                    _jobCancellationService.Remove(job.JobId);
+                } 
             }
         }
     }
@@ -84,8 +97,8 @@ public class PdfWorker : BackgroundService
     
 
     private async Task ProcessJobAsync(
-    PdfJob job,
-    CancellationToken stoppingToken)
+        PdfJob job,
+        CancellationToken jobCancellationToken)
     {
         try
         {
@@ -100,13 +113,13 @@ public class PdfWorker : BackgroundService
             Console.WriteLine($"Profile: {job.Compression.Profile}");
             Console.WriteLine($"Processing Job: {job.JobId}");
 
-            await _hub.Clients
-                .Group(job.JobId)
-                .SendAsync(
-                    "JobUpdate",
-                    "Compression started",
-                    stoppingToken);
-
+           await _hub.Clients
+               .Group(job.JobId)
+               .SendAsync(
+                   "JobUpdate",
+                   "Compression started",
+                   jobCancellationToken);
+           
             var engine = _compressionRouter.GetEngine(
                 job.CompressionEngine);
             
@@ -120,7 +133,7 @@ public class PdfWorker : BackgroundService
                 job.InputPath,
                 job.OutputPath,
                 job.Compression,
-                stoppingToken);
+                jobCancellationToken);
 
             stopwatch.Stop();
 
@@ -147,7 +160,7 @@ public class PdfWorker : BackgroundService
                 .SendAsync(
                     "JobUpdate",
                     "Compression Completed",
-                    stoppingToken);
+                   jobCancellationToken);
 
             long inputSize =
                 new FileInfo(job.InputPath).Length;
@@ -166,10 +179,62 @@ public class PdfWorker : BackgroundService
         }
        
         catch (OperationCanceledException)
-            when (stoppingToken.IsCancellationRequested)
+            when (jobCancellationToken.IsCancellationRequested)
         {
             Console.WriteLine(
-                $"Worker stopping while processing Job: {job.JobId}");
+                $"Job cancellation requested: {job.JobId}");
+
+            try
+            {
+                for (int attempt = 1; attempt <= 5; attempt++)
+                {
+                    if (!File.Exists(job.OutputPath))
+                    {
+                        break;
+                    }
+
+                    try
+                    {
+                        File.Delete(job.OutputPath);
+
+                        Console.WriteLine(
+                            $"Deleted partial output: {job.OutputPath}");
+
+                        break;
+                    }
+                    catch (IOException) when (attempt < 5)
+                    {
+                        await Task.Delay(100);
+                    }
+                }
+            }
+            catch (Exception cleanupEx)
+            {
+                Console.WriteLine(
+                    $"Failed to delete partial output: {cleanupEx}");
+            }
+
+            job.Status = JobStatus.Failed;
+            job.ErrorMessage = "Job was cancelled.";
+
+            _jobService.UpdateJob(job);
+
+            await _fileStorage.SaveJobAsync(job);
+
+            job.Completion.SetResult(false);
+
+            try
+            {
+                await _hub.Clients
+                    .Group(job.JobId)
+                    .SendAsync(
+                        "JobUpdate",
+                        "Compression Cancelled");
+            }
+            catch
+            {
+                // Ignore SignalR failure while handling cancellation.
+            }
 
             return;
         }

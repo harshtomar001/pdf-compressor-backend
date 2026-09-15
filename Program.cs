@@ -36,6 +36,10 @@ public class Program
         builder.Services.AddSingleton<IPdfQueue, PdfQueue>();
         builder.Services.AddSingleton<IJobService, JobService>();
         
+        builder.Services.AddSingleton<
+            IJobCancellationService,
+            JobCancellationService>();
+        
         builder.Services.AddSingleton<IFileStorage, LocalFileStorage>();
         
         builder.Services.Configure<JobCleanupOptions>(
