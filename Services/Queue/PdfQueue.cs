@@ -3,7 +3,7 @@ using pdf_compressor.Models;
 
 namespace pdf_compressor.Services.Queue;
 
-public class PdfQueue : IPdfQueue
+public class PdfQueue : IPdfQueue, IDisposable
 {
     private readonly SemaphoreSlim _signal = new(0);
     private readonly ConcurrentQueue<PdfJob> _queue = new();
@@ -44,5 +44,8 @@ public class PdfQueue : IPdfQueue
     {
         await _signal.WaitAsync(cancellationToken); // Wait until the semaphore has a permit available
     }
-    
+    public void Dispose() // ASP.NET Core's DI container will dispose the singleton when the application shuts down.
+    {
+        _signal.Dispose();
+    }
 }

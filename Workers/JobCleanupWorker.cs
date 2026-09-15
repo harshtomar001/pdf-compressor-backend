@@ -19,6 +19,16 @@ public class JobCleanupWorker : BackgroundService
             try
             {
                 await _cleanupService.CleanupAsync();
+
+                await Task.Delay(
+                    _cleanupService.CleanupInterval,
+                    stoppingToken
+                );
+            }
+            catch (OperationCanceledException)
+                when (stoppingToken.IsCancellationRequested)
+            {
+                break;
             }
             catch (Exception ex)
             {
@@ -26,11 +36,6 @@ public class JobCleanupWorker : BackgroundService
                     $"Job cleanup worker error: {ex}"
                 );
             }
-
-            await Task.Delay(
-                _cleanupService.CleanupInterval,
-                stoppingToken
-            );
         }
     }
 }

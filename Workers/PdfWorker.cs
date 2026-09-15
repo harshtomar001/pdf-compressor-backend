@@ -18,8 +18,6 @@ public class PdfWorker : BackgroundService
     private readonly IFileStorage _fileStorage;
     
     private readonly IJobCancellationService _jobCancellationService;
-    
-    private readonly CancellationTokenSource _processingCts = new();
 
     public PdfWorker(
         IPdfQueue queue,
