@@ -50,10 +50,29 @@ public class JobCleanupService
 
             try
             {
-                await _jobService.RemoveJobAsync(job.JobId);
+                PdfJob? currentJob =
+                    await _jobService.GetJobAsync(job.JobId);
+
+                if (currentJob == null)
+                {
+                    continue;
+                }
+
+                if (currentJob.CreatedAt >= cutoff)
+                {
+                    continue;
+                }
+
+                if (currentJob.Status != JobStatus.Completed &&
+                    currentJob.Status != JobStatus.Failed)
+                {
+                    continue;
+                }
+
+                await _jobService.RemoveJobAsync(currentJob.JobId);
 
                 Console.WriteLine(
-                    $"Cleaned up expired job: {job.JobId}"
+                    $"Cleaned up expired job: {currentJob.JobId}"
                 );
             }
             catch (Exception ex)
