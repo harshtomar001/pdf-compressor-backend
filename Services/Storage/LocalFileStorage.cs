@@ -178,4 +178,42 @@ public class LocalFileStorage : IFileStorage
         return jobs.AsReadOnly();
     }
     
+    public Task<IReadOnlyList<string>> GetOrphanedJobFoldersAsync(
+        DateTime cutoff)
+    {
+        var orphanedFolders = new List<string>();
+
+        if (!Directory.Exists(_basePath))
+        {
+            return Task.FromResult<IReadOnlyList<string>>(
+                orphanedFolders.AsReadOnly()
+            );
+        }
+
+        foreach (string jobFolder in Directory.GetDirectories(_basePath))
+        {
+            string jobFile = Path.Combine(
+                jobFolder,
+                "job.json"
+            );
+
+            if (File.Exists(jobFile))
+            {
+                continue;
+            }
+
+            DateTime lastWriteTime = Directory
+                .GetLastWriteTimeUtc(jobFolder);
+
+            if (lastWriteTime < cutoff)
+            {
+                orphanedFolders.Add(jobFolder);
+            }
+        }
+
+        return Task.FromResult<IReadOnlyList<string>>(
+            orphanedFolders.AsReadOnly()
+        );
+    }
+    
 }

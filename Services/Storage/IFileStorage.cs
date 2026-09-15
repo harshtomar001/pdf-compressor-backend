@@ -15,4 +15,7 @@ public interface IFileStorage
     
     Task<IReadOnlyList<PdfJob>> GetStoredJobsAsync();
     
+    Task<IReadOnlyList<string>> GetOrphanedJobFoldersAsync(
+        DateTime cutoff);
+    
 }
