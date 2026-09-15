@@ -1,4 +1,5 @@
-﻿using pdf_compressor.Hubs;
+﻿using System.Diagnostics;
+using pdf_compressor.Hubs;
 using pdf_compressor.Models;
 using pdf_compressor.Services.Compression;
 using Microsoft.AspNetCore.SignalR;
@@ -61,7 +62,7 @@ public class PdfWorker : BackgroundService
 
             if (_queue.TryDequeue(out PdfJob? job) && job != null)
             {
-                await ProcessJobAsync(job, _processingCts.Token);
+                await ProcessJobAsync(job, CancellationToken.None); // shutdown does not cancel the active Ghostscript process.
             }
         }
     }
@@ -108,12 +109,28 @@ public class PdfWorker : BackgroundService
 
             var engine = _compressionRouter.GetEngine(
                 job.CompressionEngine);
+            
+            var stopwatch = Stopwatch.StartNew();
+
+            Console.WriteLine(
+                $"Compression started at: {DateTime.UtcNow:O}"
+            );
 
             await engine.CompressAsync(
                 job.InputPath,
                 job.OutputPath,
                 job.Compression,
                 stoppingToken);
+
+            stopwatch.Stop();
+
+            Console.WriteLine(
+                $"Compression finished at: {DateTime.UtcNow:O}"
+            );
+
+            Console.WriteLine(
+                $"Compression time: {stopwatch.Elapsed.TotalMilliseconds:F3} ms"
+            );
 
             job.Status = JobStatus.Completed;
 

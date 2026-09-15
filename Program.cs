@@ -13,6 +13,11 @@ public class Program
     {
         var builder = WebApplication.CreateBuilder(args);
         
+        builder.Host.ConfigureHostOptions(options =>
+        {
+            options.ShutdownTimeout = TimeSpan.FromMinutes(30);
+        });
+        
         builder.Services.Configure<PdfToolOptions>(
             builder.Configuration.GetSection("PdfTools")
         );
