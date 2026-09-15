@@ -19,5 +19,6 @@ public class PdfJob
     public string? ErrorMessage { get; set; }
 
     [JsonIgnore]
-    public TaskCompletionSource<bool> Completion { get; set; } = new();
+    public TaskCompletionSource<bool> Completion { get; set; } =
+        new(TaskCreationOptions.RunContinuationsAsynchronously);
 }

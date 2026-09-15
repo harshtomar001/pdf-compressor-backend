@@ -35,15 +35,39 @@ public class PdfWorker : BackgroundService
         _fileStorage = fileStorage;
         _jobCancellationService = jobCancellationService;
     }
-
+    
     protected override async Task ExecuteAsync(
         CancellationToken stoppingToken)
     {
+        // Recover jobs that were not in a terminal state
+        // when the application previously stopped.
+        var storedJobs = await _fileStorage.GetStoredJobsAsync();
+
+        foreach (var job in storedJobs)
+        {
+            if (job.Status == JobStatus.Queued ||
+                job.Status == JobStatus.Processing)
+            {
+                Console.WriteLine(
+                    $"Recovering job: {job.JobId} " +
+                    $"(previous status: {job.Status})");
+
+                job.Status = JobStatus.Queued;
+                job.ErrorMessage = null;
+
+                _jobService.UpdateJob(job);
+
+                await _fileStorage.SaveJobAsync(job);
+
+                _queue.Enqueue(job);
+            }
+        }
+
         var workers = new[]
         {
             ProcessQueueAsync(stoppingToken),
             ProcessQueueAsync(stoppingToken)
-        }; //  only 2 task are allowed at a time 
+        };//  only 2 task are allowed at a time 
 
         await Task.WhenAll(workers); //  Wait until ALL tasks inside workers have finished.
     }
@@ -219,7 +243,7 @@ public class PdfWorker : BackgroundService
 
             await _fileStorage.SaveJobAsync(job);
 
-            job.Completion.SetResult(false);
+            job.Completion.TrySetResult(true);
 
             try
             {
@@ -285,7 +309,7 @@ public class PdfWorker : BackgroundService
 
             await _fileStorage.SaveJobAsync(job);
 
-            job.Completion.SetResult(false);
+            job.Completion.TrySetResult(false);
 
             Console.WriteLine(
                 $"Failed Job: {job.JobId}");
