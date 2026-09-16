@@ -21,10 +21,12 @@ public class Program
             options.ShutdownTimeout = TimeSpan.FromMinutes(30);
         });
         
-        builder.Services.Configure<PdfToolOptions>(
-            builder.Configuration.GetSection("PdfTools")
-        );
-        
+        builder.Services
+            .AddOptions<PdfToolOptions>()
+            .Bind(builder.Configuration.GetSection("PdfTools"))
+            .ValidateDataAnnotations()
+            .ValidateOnStart();
+       
         builder.Services.AddOpenApi();
 
         builder.Services.AddControllers();
