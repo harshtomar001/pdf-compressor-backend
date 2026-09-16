@@ -25,21 +25,14 @@ public class GhostscriptEngine : IPdfCompressionEngine
         CompressionOptions options,
         CancellationToken cancellationToken)
     {
-        var compressionLevel = options.Profile switch
-        {
-            "low" => "screen",
-            "balanced" => "ebook",
-            "high" => "printer",
-            _ => "ebook"
-        };
 
         var startInfo = new ProcessStartInfo
         {
             FileName = _gsPath,
+
             Arguments =
                 $"-sDEVICE=pdfwrite " +
                 $"-dCompatibilityLevel=1.4 " +
-                $"-dPDFSETTINGS=/{compressionLevel} " +
                 $"-dNOPAUSE " +
                 $"-dQUIET " +
                 $"-dBATCH " +
@@ -57,16 +50,45 @@ public class GhostscriptEngine : IPdfCompressionEngine
             StartInfo = startInfo
         };
 
+        var stopwatch = Stopwatch.StartNew();
+
         process.Start();
+        string error = null;
 
-        string output = await process.StandardOutput.ReadToEndAsync(cancellationToken);
-        string error = await process.StandardError.ReadToEndAsync(cancellationToken);
+        try
+        {
+            string output =
+                await process.StandardOutput.ReadToEndAsync(
+                    cancellationToken);
 
-        await process.WaitForExitAsync(cancellationToken);
+               error =
+                await process.StandardError.ReadToEndAsync(
+                    cancellationToken);
+
+            await process.WaitForExitAsync(cancellationToken);
+        }
+        catch (OperationCanceledException)
+        {
+            if (!process.HasExited)
+            {
+                process.Kill(entireProcessTree: true);
+            }
+
+            await process.WaitForExitAsync();
+
+            throw;
+        }
+
+        stopwatch.Stop();
+
+        Console.WriteLine(
+            $"Ghostscript process time: " +
+            $"{stopwatch.Elapsed.TotalMilliseconds:F3} ms");
 
         if (process.ExitCode != 0)
         {
-            throw new Exception($"Ghostscript failed: {error}");
+            throw new Exception(
+                $"Ghostscript failed: {error}");
         }
     }
 }

@@ -7,6 +7,8 @@ using pdf_compressor.Services.Storage;
 using pdf_compressor.Workers;
 using pdf_compressor.Configuration;
 using System.Threading.RateLimiting;
+using Microsoft.AspNetCore.Mvc;
+using pdf_compressor.Models;
 
 public class Program
 {
@@ -26,6 +28,18 @@ public class Program
         builder.Services.AddOpenApi();
 
         builder.Services.AddControllers();
+        
+        builder.Services.Configure<ApiBehaviorOptions>(options =>
+        {
+            options.InvalidModelStateResponseFactory = context =>
+            {
+                return new BadRequestObjectResult(new ApiError
+                {
+                    Error = "ValidationError",
+                    Message = "The request contains invalid or missing fields."
+                });
+            };
+        });
         
         builder.Services.AddRateLimiter(options =>
         {

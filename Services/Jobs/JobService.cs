@@ -24,6 +24,31 @@ public class JobService : IJobService
         string compressionEngine,
         CompressionOptions compression)
     {
+        
+        if (compression == null)
+        {
+            throw new ArgumentNullException(
+                nameof(compression));
+        }
+
+        if (compression.Profile != "low" &&
+            compression.Profile != "balanced" &&
+            compression.Profile != "high")
+        {
+            throw new ArgumentException(
+                "Invalid compression profile.",
+                nameof(compression));
+        }
+
+        if (compressionEngine != "ghostscript" &&
+            compressionEngine != "mupdf" &&
+            compressionEngine != "qpdf")
+        {
+            throw new ArgumentException(
+                "Invalid compression engine.",
+                nameof(compressionEngine));
+        }
+        
         string accessToken = GenerateAccessToken();
 
         using var sha256 = SHA256.Create();
