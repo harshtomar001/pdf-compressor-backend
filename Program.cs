@@ -6,6 +6,7 @@ using pdf_compressor.Services.Queue;
 using pdf_compressor.Services.Storage;
 using pdf_compressor.Workers;
 using pdf_compressor.Configuration;
+using System.Threading.RateLimiting;
 
 public class Program
 {
@@ -25,6 +26,46 @@ public class Program
         builder.Services.AddOpenApi();
 
         builder.Services.AddControllers();
+        
+        builder.Services.AddRateLimiter(options =>
+        {
+            options.GlobalLimiter =
+                PartitionedRateLimiter.Create<HttpContext, string>(
+                    httpContext =>
+                    {
+                        string key =
+                            httpContext.Connection.RemoteIpAddress?.ToString()
+                            ?? "unknown";
+
+                        return RateLimitPartition.GetFixedWindowLimiter(
+                            key,
+                            _ => new FixedWindowRateLimiterOptions
+                            {
+                                PermitLimit = 30,
+                                Window = TimeSpan.FromMinutes(1),
+                                QueueLimit = 0
+                            });
+                    });
+
+            options.AddPolicy("compression", httpContext =>
+            {
+                string key =
+                    httpContext.Connection.RemoteIpAddress?.ToString()
+                    ?? "unknown";
+
+                return RateLimitPartition.GetFixedWindowLimiter(
+                    key,
+                    _ => new FixedWindowRateLimiterOptions
+                    {
+                        PermitLimit = 5,
+                        Window = TimeSpan.FromMinutes(1),
+                        QueueLimit = 0
+                    });
+            });
+
+            options.RejectionStatusCode =
+                StatusCodes.Status429TooManyRequests;
+        });
         
         builder.Services.AddSingleton<GhostscriptEngine>();
         builder.Services.AddSingleton<MuPdfEngine>();
@@ -69,6 +110,7 @@ public class Program
         builder.WebHost.UseUrls("http://0.0.0.0:6464");
 
         var app = builder.Build(); 
+        app.UseRateLimiter();
         app.MapControllers();
         app.MapHub<PdfHub>("/PdfHub");
        

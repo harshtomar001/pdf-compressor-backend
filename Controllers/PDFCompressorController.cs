@@ -1,4 +1,5 @@
 ﻿using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.AspNetCore.SignalR;
 using pdf_compressor.Exceptions;
 using pdf_compressor.Hubs;
@@ -43,6 +44,7 @@ namespace pdf_compressor.Controllers
                 }
 
                 [HttpPost("compress_PDF")]
+                [EnableRateLimiting("compression")]
                 public async Task<IActionResult> Compress([FromForm] CompressionRequest request)
                 {
                         string inputPath;
