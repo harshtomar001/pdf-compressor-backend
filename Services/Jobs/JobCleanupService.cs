@@ -91,7 +91,7 @@ public class JobCleanupService
         {
             try
             {
-                Directory.Delete(folder, true);
+                await _fileStorage.DeleteOrphanedFolderAsync(folder);
 
                 Console.WriteLine(
                     $"Cleaned up orphaned job folder: {folder}"

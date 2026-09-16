@@ -47,6 +47,11 @@ public class JobService : IJobService
 
     public async Task<PdfJob?> GetJobAsync(string jobId)
     {
+        if (!Guid.TryParse(jobId, out _))
+        {
+            return null;
+        }
+
         // First check the in-memory job collection.
         if (_jobs.TryGetValue(jobId, out var job))
         {

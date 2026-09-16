@@ -96,13 +96,50 @@ namespace pdf_compressor.Controllers
                                 }
                         );
                         
-                        await _fileStorage.SaveJobAsync(pdfJob);
+                        try
+                        {
+                                await _fileStorage.SaveJobAsync(pdfJob);
 
-                        Console.WriteLine($"Saved job data for: {jobId}");
+                                Console.WriteLine(
+                                        $"Saved job data for: {jobId}"
+                                );
+                        }
+                        catch (Exception ex)
+                        {
+                                Console.WriteLine(
+                                        $"Failed to save job data: {ex}"
+                                );
+
+                                try
+                                {
+                                        await _fileStorage.DeleteJobAsync(jobId);
+
+                                        Console.WriteLine(
+                                                $"Cleaned up failed job storage: {jobId}"
+                                        );
+                                }
+                                catch (Exception cleanupException)
+                                {
+                                        Console.WriteLine(
+                                                $"Failed to clean up job storage: {jobId}"
+                                        );
+
+                                        Console.WriteLine(cleanupException);
+                                }
+
+                                return StatusCode(500, new ApiError
+                                {
+                                        Error = "StorageError",
+                                        Message = "The job could not be saved."
+                                });
+                        }
 
                         _jobService.AddJob(pdfJob);
                         _queue.Enqueue(pdfJob);
-                        
+
+                        Console.WriteLine(
+                                $"Queued job: {jobId}"
+                        );
                         
                         return Ok(new
                         {

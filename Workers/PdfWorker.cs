@@ -45,6 +45,26 @@ public class PdfWorker : BackgroundService
 
         foreach (var job in storedJobs)
         {
+            
+            if (!File.Exists(job.InputPath))
+            {
+                Console.WriteLine(
+                    $"Recovered job has missing input file: {job.JobId}"
+                );
+
+                job.Status = JobStatus.Failed;
+                job.ErrorMessage = "Input PDF is missing.";
+
+                _jobService.UpdateJob(job);
+
+                await _fileStorage.SaveJobAsync(job);
+
+                job.Completion.TrySetResult(false);
+
+                continue;
+            }
+            
+            
             if (job.Status == JobStatus.Queued ||
                 job.Status == JobStatus.Processing)
             {
@@ -142,8 +162,7 @@ public class PdfWorker : BackgroundService
                    "Compression started",
                    jobCancellationToken);
            
-            var engine = _compressionRouter.GetEngine(
-                job.CompressionEngine);
+            var engine = _compressionRouter.GetEngine(job.CompressionEngine);
             
             var stopwatch = Stopwatch.StartNew();
 
@@ -159,13 +178,9 @@ public class PdfWorker : BackgroundService
 
             stopwatch.Stop();
 
-            Console.WriteLine(
-                $"Compression finished at: {DateTime.UtcNow:O}"
-            );
+            Console.WriteLine($"Compression finished at: {DateTime.UtcNow:O}");
 
-            Console.WriteLine(
-                $"Compression time: {stopwatch.Elapsed.TotalMilliseconds:F3} ms"
-            );
+            Console.WriteLine($"Compression time: {stopwatch.Elapsed.TotalMilliseconds:F3} ms");
 
             job.Status = JobStatus.Completed;
 
@@ -175,7 +190,7 @@ public class PdfWorker : BackgroundService
 
             await NotifyQueuePositions();
 
-            job.Completion.SetResult(true);
+            job.Completion.TrySetResult(true);
 
             await _hub.Clients
                 .Group(job.JobId)
@@ -184,27 +199,21 @@ public class PdfWorker : BackgroundService
                     "Compression Completed",
                    jobCancellationToken);
 
-            long inputSize =
-                new FileInfo(job.InputPath).Length;
+            long inputSize = new FileInfo(job.InputPath).Length;
 
-            long outputSize =
-                new FileInfo(job.OutputPath).Length;
+            long outputSize = new FileInfo(job.OutputPath).Length;
 
-            Console.WriteLine(
-                $"Input size: {inputSize} bytes");
+            Console.WriteLine($"Input size: {inputSize} bytes");
 
-            Console.WriteLine(
-                $"Output size: {outputSize} bytes");
+            Console.WriteLine($"Output size: {outputSize} bytes");
 
-            Console.WriteLine(
-                $"Completed Job: {job.JobId}");
+            Console.WriteLine($"Completed Job: {job.JobId}");
         }
        
         catch (OperationCanceledException)
             when (jobCancellationToken.IsCancellationRequested)
         {
-            Console.WriteLine(
-                $"Job cancellation requested: {job.JobId}");
+            Console.WriteLine($"Job cancellation requested: {job.JobId}");
 
             try
             {
@@ -219,8 +228,7 @@ public class PdfWorker : BackgroundService
                     {
                         File.Delete(job.OutputPath);
 
-                        Console.WriteLine(
-                            $"Deleted partial output: {job.OutputPath}");
+                        Console.WriteLine($"Deleted partial output: {job.OutputPath}");
 
                         break;
                     }
@@ -232,8 +240,7 @@ public class PdfWorker : BackgroundService
             }
             catch (Exception cleanupEx)
             {
-                Console.WriteLine(
-                    $"Failed to delete partial output: {cleanupEx}");
+                Console.WriteLine($"Failed to delete partial output: {cleanupEx}");
             }
 
             job.Status = JobStatus.Failed;
@@ -243,7 +250,7 @@ public class PdfWorker : BackgroundService
 
             await _fileStorage.SaveJobAsync(job);
 
-            job.Completion.TrySetResult(true);
+            job.Completion.TrySetResult(false);
 
             try
             {

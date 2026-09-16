@@ -11,14 +11,27 @@ public class PdfQueue : IPdfQueue, IDisposable
     public void Enqueue(PdfJob job)
     {
         _queue.Enqueue(job);
+
+        Console.WriteLine(
+            $"QUEUE ENQUEUE: {job.JobId}"
+        );
+
         _signal.Release();
     }
 
     public bool TryDequeue(out PdfJob? job)
     {
-        return _queue.TryDequeue(out job);
-    }
+        var result = _queue.TryDequeue(out job);
 
+        if (result && job != null)
+        {
+            Console.WriteLine(
+                $"QUEUE DEQUEUE: {job.JobId}"
+            );
+        }
+
+        return result;
+    }
     public IReadOnlyList<PdfJob> GetQueuedJobs()
     {
         return _queue.ToArray();
@@ -44,6 +57,7 @@ public class PdfQueue : IPdfQueue, IDisposable
     {
         await _signal.WaitAsync(cancellationToken); // Wait until the semaphore has a permit available
     }
+    
     public void Dispose() // ASP.NET Core's DI container will dispose the singleton when the application shuts down.
     {
         _signal.Dispose();

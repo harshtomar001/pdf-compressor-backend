@@ -18,4 +18,8 @@ public interface IFileStorage
     Task<IReadOnlyList<string>> GetOrphanedJobFoldersAsync(
         DateTime cutoff);
     
+    Task DeleteOrphanedFolderAsync(string folderPath);
+    
+    
+    
 }
