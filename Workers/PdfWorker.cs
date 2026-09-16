@@ -7,6 +7,7 @@ using pdf_compressor.Services.Jobs;
 using pdf_compressor.Services.Queue;
 using pdf_compressor.Services.Storage;
 
+
 namespace pdf_compressor.Workers;
 
 public class PdfWorker : BackgroundService
@@ -16,6 +17,7 @@ public class PdfWorker : BackgroundService
     private readonly CompressionRouter _compressionRouter;
     private readonly IHubContext<PdfHub> _hub;
     private readonly IFileStorage _fileStorage;
+    private readonly ILogger<PdfWorker> _logger;
     
     private readonly IJobCancellationService _jobCancellationService;
 
@@ -25,7 +27,8 @@ public class PdfWorker : BackgroundService
         CompressionRouter compressionRouter,
         IHubContext<PdfHub> hub,
         IFileStorage fileStorage,
-        IJobCancellationService jobCancellationService
+        IJobCancellationService jobCancellationService,
+        ILogger<PdfWorker> logger
     )
     {
         _queue = queue;
@@ -34,8 +37,8 @@ public class PdfWorker : BackgroundService
         _hub = hub;
         _fileStorage = fileStorage;
         _jobCancellationService = jobCancellationService;
+        _logger = logger;
     }
-    
     protected override async Task ExecuteAsync(
         CancellationToken stoppingToken)
     {
@@ -138,7 +141,7 @@ public class PdfWorker : BackgroundService
     }
     
 
-    private async Task ProcessJobAsync(
+     private async Task ProcessJobAsync(
         PdfJob job,
         CancellationToken jobCancellationToken)
     {
@@ -151,36 +154,46 @@ public class PdfWorker : BackgroundService
 
             await _fileStorage.SaveJobAsync(job);
 
-            Console.WriteLine($"Engine: {job.CompressionEngine}");
-            Console.WriteLine($"Profile: {job.Compression.Profile}");
-            Console.WriteLine($"Processing Job: {job.JobId}");
+            _logger.LogInformation(
+                "Starting PDF compression. JobId: {JobId}, Engine: {Engine}, Profile: {Profile}",
+                job.JobId,
+                job.CompressionEngine,
+                job.Compression.Profile
+            );
 
-           await _hub.Clients
-               .Group(job.JobId)
-               .SendAsync(
-                   "JobUpdate",
-                   "Compression started",
-                   jobCancellationToken);
-           
-            var engine = _compressionRouter.GetEngine(job.CompressionEngine);
-            
+            await _hub.Clients
+                .Group(job.JobId)
+                .SendAsync(
+                    "JobUpdate",
+                    "Compression started",
+                    jobCancellationToken
+                );
+
+            var engine =
+                _compressionRouter.GetEngine(
+                    job.CompressionEngine);
+
             var stopwatch = Stopwatch.StartNew();
 
-            Console.WriteLine(
-                $"Compression started at: {DateTime.UtcNow:O}"
+            _logger.LogInformation(
+                "Compression started. JobId: {JobId}",
+                job.JobId
             );
 
             await engine.CompressAsync(
                 job.InputPath,
                 job.OutputPath,
                 job.Compression,
-                jobCancellationToken);
+                jobCancellationToken
+            );
 
             stopwatch.Stop();
 
-            Console.WriteLine($"Compression finished at: {DateTime.UtcNow:O}");
-
-            Console.WriteLine($"Compression time: {stopwatch.Elapsed.TotalMilliseconds:F3} ms");
+            _logger.LogInformation(
+                "Compression completed. JobId: {JobId}, DurationMs: {DurationMs:F3}",
+                job.JobId,
+                stopwatch.Elapsed.TotalMilliseconds
+            );
 
             job.Status = JobStatus.Completed;
 
@@ -197,23 +210,30 @@ public class PdfWorker : BackgroundService
                 .SendAsync(
                     "JobUpdate",
                     "Compression Completed",
-                   jobCancellationToken);
+                    jobCancellationToken
+                );
 
-            long inputSize = new FileInfo(job.InputPath).Length;
+            long inputSize =
+                new FileInfo(job.InputPath).Length;
 
-            long outputSize = new FileInfo(job.OutputPath).Length;
+            long outputSize =
+                new FileInfo(job.OutputPath).Length;
 
-            Console.WriteLine($"Input size: {inputSize} bytes");
-
-            Console.WriteLine($"Output size: {outputSize} bytes");
-
-            Console.WriteLine($"Completed Job: {job.JobId}");
+            _logger.LogInformation(
+                "Compression result. JobId: {JobId}, InputBytes: {InputBytes}, OutputBytes: {OutputBytes}",
+                job.JobId,
+                inputSize,
+                outputSize
+            );
         }
-       
+
         catch (OperationCanceledException)
             when (jobCancellationToken.IsCancellationRequested)
         {
-            Console.WriteLine($"Job cancellation requested: {job.JobId}");
+            _logger.LogWarning(
+                "PDF compression cancelled. JobId: {JobId}",
+                job.JobId
+            );
 
             try
             {
@@ -228,7 +248,10 @@ public class PdfWorker : BackgroundService
                     {
                         File.Delete(job.OutputPath);
 
-                        Console.WriteLine($"Deleted partial output: {job.OutputPath}");
+                        _logger.LogInformation(
+                            "Deleted partial output. JobId: {JobId}",
+                            job.JobId
+                        );
 
                         break;
                     }
@@ -240,7 +263,11 @@ public class PdfWorker : BackgroundService
             }
             catch (Exception cleanupEx)
             {
-                Console.WriteLine($"Failed to delete partial output: {cleanupEx}");
+                _logger.LogWarning(
+                    cleanupEx,
+                    "Failed to delete partial output. JobId: {JobId}",
+                    job.JobId
+                );
             }
 
             job.Status = JobStatus.Failed;
@@ -258,7 +285,8 @@ public class PdfWorker : BackgroundService
                     .Group(job.JobId)
                     .SendAsync(
                         "JobUpdate",
-                        "Compression Cancelled");
+                        "Compression Cancelled"
+                    );
             }
             catch
             {
@@ -267,38 +295,40 @@ public class PdfWorker : BackgroundService
 
             return;
         }
-        
+
         catch (Exception ex)
         {
-            
             try
             {
                 if (File.Exists(job.OutputPath))
                 {
                     File.Delete(job.OutputPath);
 
-                    Console.WriteLine(
-                        $"Deleted partial output: {job.OutputPath}"
+                    _logger.LogInformation(
+                        "Deleted partial output after failure. JobId: {JobId}",
+                        job.JobId
                     );
                 }
             }
             catch (Exception cleanupEx)
             {
-                Console.WriteLine(
-                    $"Failed to delete partial output: {cleanupEx}"
+                _logger.LogWarning(
+                    cleanupEx,
+                    "Failed to delete partial output after failure. JobId: {JobId}",
+                    job.JobId
                 );
             }
-            
-            
+
             job.Status = JobStatus.Failed;
             job.ErrorMessage = ex.Message;
 
             _jobService.UpdateJob(job);
 
-            Console.WriteLine(
-                $"Worker error for Job: {job.JobId}");
-            Console.WriteLine(ex.ToString());
-
+            _logger.LogError(
+                ex,
+                "PDF compression failed. JobId: {JobId}",
+                job.JobId
+            );
 
             try
             {
@@ -306,7 +336,8 @@ public class PdfWorker : BackgroundService
                     .Group(job.JobId)
                     .SendAsync(
                         "JobUpdate",
-                        "Compression Failed");
+                        "Compression Failed"
+                    );
             }
             catch
             {
@@ -318,12 +349,11 @@ public class PdfWorker : BackgroundService
 
             job.Completion.TrySetResult(false);
 
-            Console.WriteLine(
-                $"Failed Job: {job.JobId}");
+            _logger.LogError(
+                "Job marked as failed. JobId: {JobId}",
+                job.JobId
+            );
         }
-        
     }
-        
-    
-
+     
 }

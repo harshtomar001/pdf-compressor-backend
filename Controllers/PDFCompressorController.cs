@@ -7,6 +7,7 @@ using pdf_compressor.Models;
 using pdf_compressor.Services.Jobs;
 using pdf_compressor.Services.Queue;
 using pdf_compressor.Services.Storage;
+using pdf_compressor.Workers;
 
 namespace pdf_compressor.Controllers
 {
@@ -21,12 +22,15 @@ namespace pdf_compressor.Controllers
                 private readonly IHubContext<PdfHub> _hub;
                 private readonly IFileStorage _fileStorage;
                 private readonly IJobCancellationService _jobCancellationService;
+                
+                private readonly ILogger<PdfWorker> _logger;
 
                 public PdfCompressorController(
                         IPdfQueue _queue,
                         IJobService jobService,
                         IFileStorage fileStorage,
                         IHubContext<PdfHub> hub,
+                        ILogger<PdfWorker> logger,
                         IJobCancellationService jobCancellationService)
                 {
                         this._queue = _queue;
@@ -34,6 +38,7 @@ namespace pdf_compressor.Controllers
                         this._jobService = jobService;
                         this._fileStorage = fileStorage;
                         this._jobCancellationService = jobCancellationService;
+                        _logger = logger;
                 }
 
                 
@@ -57,6 +62,7 @@ namespace pdf_compressor.Controllers
                         {
                                 (inputPath, outputPath, jobId) =
                                         await _fileStorage.CreateJobFilesAsync(request.File);
+                                
                         }
                         catch (InvalidFileException ex)
                         {
@@ -68,25 +74,35 @@ namespace pdf_compressor.Controllers
                         }
                         catch (Exception ex)
                         {
-                                Console.WriteLine(
-                                        $"File storage error: {ex}"
+                                _logger.LogError(
+                                        ex,
+                                        "File storage error while creating job files."
                                 );
-
                                 return StatusCode(500, new ApiError
                                 {
                                         Error = "StorageError",
                                         Message = "The file could not be stored."
                                 });
+                                
+                                
                         }
                         
-                        Console.WriteLine("1. File path done");
-                        
-                        Console.WriteLine($"{inputPath} -> {outputPath} -> {jobId}");
-                        
-                        Console.WriteLine($"Profile {request.Profile}");
-                        Console.WriteLine($"Engine: {request.Engine}");
+                        // Console.WriteLine("1. File path done");
+                        //
+                        // Console.WriteLine($"{inputPath} -> {outputPath} -> {jobId}");
+                        //
+                        // Console.WriteLine($"Profile {request.Profile}");
+                        // Console.WriteLine($"Engine: {request.Engine}");
                        
 
+                        _logger.LogInformation(
+                                "Compression request received. JobId: {JobId}, FileName: {FileName}, Engine: {Engine}, Profile: {Profile}",
+                                jobId,
+                                request.File.FileName,
+                                request.Engine,
+                                request.Profile
+                        );
+                        
                         var (pdfJob, accessToken) = _jobService.CreateJob(
                                 jobId,
                                 inputPath,
@@ -102,31 +118,34 @@ namespace pdf_compressor.Controllers
                         {
                                 await _fileStorage.SaveJobAsync(pdfJob);
 
-                                Console.WriteLine(
-                                        $"Saved job data for: {jobId}"
+                                _logger.LogInformation(
+                                        "Job data saved. JobId: {JobId}",
+                                        jobId
                                 );
                         }
                         catch (Exception ex)
                         {
-                                Console.WriteLine(
-                                        $"Failed to save job data: {ex}"
+                                _logger.LogError(
+                                        ex,
+                                        "Failed to save job data. JobId: {JobId}",
+                                        jobId
                                 );
 
                                 try
                                 {
                                         await _fileStorage.DeleteJobAsync(jobId);
-
-                                        Console.WriteLine(
-                                                $"Cleaned up failed job storage: {jobId}"
+                                        _logger.LogInformation(
+                                                "Cleaned up failed job storage. JobId: {JobId}",
+                                                jobId
                                         );
                                 }
                                 catch (Exception cleanupException)
                                 {
-                                        Console.WriteLine(
-                                                $"Failed to clean up job storage: {jobId}"
+                                        _logger.LogWarning(
+                                                cleanupException,
+                                                "Failed to clean up job storage. JobId: {JobId}",
+                                                jobId
                                         );
-
-                                        Console.WriteLine(cleanupException);
                                 }
 
                                 return StatusCode(500, new ApiError
@@ -139,8 +158,10 @@ namespace pdf_compressor.Controllers
                         _jobService.AddJob(pdfJob);
                         _queue.Enqueue(pdfJob);
 
-                        Console.WriteLine(
-                                $"Queued job: {jobId}"
+                        _logger.LogInformation(
+                                "Compression job queued. JobId: {JobId}, Position: {Position}",
+                                jobId,
+                                _queue.GetPosition(jobId)
                         );
                         
                         return Ok(new
