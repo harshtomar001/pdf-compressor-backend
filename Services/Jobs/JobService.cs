@@ -2,6 +2,8 @@
 using System.Text.Json;
 using pdf_compressor.Models;
 using pdf_compressor.Services.Storage;
+using System.Security.Cryptography;
+using System.Text;
 
 namespace pdf_compressor.Services.Jobs;
 
@@ -15,22 +17,36 @@ public class JobService : IJobService
         _fileStorage = fileStorage;
     }
 
-    public PdfJob CreateJob(
+    public (PdfJob job, string accessToken) CreateJob(
         string jobId,
         string inputPath,
         string outputPath,
         string compressionEngine,
         CompressionOptions compression)
     {
-        return new PdfJob
+        string accessToken = GenerateAccessToken();
+
+        using var sha256 = SHA256.Create();
+
+        byte[] hashBytes = sha256.ComputeHash(
+            System.Text.Encoding.UTF8.GetBytes(accessToken)
+        );
+
+        string accessTokenHash =
+            Convert.ToHexString(hashBytes);
+
+        var job = new PdfJob
         {
             JobId = jobId,
+            AccessTokenHash = accessTokenHash,
             InputPath = inputPath,
             OutputPath = outputPath,
             Status = JobStatus.Queued,
             CompressionEngine = compressionEngine,
             Compression = compression
         };
+
+        return (job, accessToken);
     }
 
     public void AddJob(PdfJob job)
@@ -88,7 +104,7 @@ public class JobService : IJobService
     {
         _jobs.TryRemove(jobId, out _);
     }
-    
+
 
     public async Task RemoveJobAsync(string jobId)
     {
@@ -101,6 +117,39 @@ public class JobService : IJobService
     {
         return _jobs.Values.ToList().AsReadOnly();
     }
+
+    public string GenerateAccessToken()
+    {
+        byte[] tokenBytes = RandomNumberGenerator.GetBytes(32);
+
+        return Convert.ToBase64String(tokenBytes)
+            .Replace("+", "-")
+            .Replace("/", "_")
+            .TrimEnd('=');
+    }
     
+    public bool ValidateAccessToken(
+        PdfJob job,
+        string accessToken)
+    {
+        if (string.IsNullOrWhiteSpace(accessToken))
+        {
+            return false;
+        }
+
+        using var sha256 = SHA256.Create();
+
+        byte[] hashBytes = sha256.ComputeHash(
+            Encoding.UTF8.GetBytes(accessToken)
+        );
+
+        string accessTokenHash =
+            Convert.ToHexString(hashBytes);
+
+        return CryptographicOperations.FixedTimeEquals(
+            Convert.FromHexString(job.AccessTokenHash),
+            Convert.FromHexString(accessTokenHash)
+        );
+    }
     
 }

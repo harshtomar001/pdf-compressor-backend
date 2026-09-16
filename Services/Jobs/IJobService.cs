@@ -4,7 +4,7 @@ namespace pdf_compressor.Services.Jobs;
 
 public interface IJobService
 {
-    PdfJob CreateJob(
+    (PdfJob job, string accessToken) CreateJob(
         string jobId,
         string inputPath,
         string outputPath,
@@ -24,5 +24,10 @@ public interface IJobService
     IReadOnlyCollection<PdfJob> GetAllJobs();
     
     Task RemoveJobAsync(string jobId);
+    
+    string GenerateAccessToken();
+    
+    bool ValidateAccessToken(PdfJob job, string accessToken);
+    
     
 }

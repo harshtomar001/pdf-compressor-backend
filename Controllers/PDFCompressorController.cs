@@ -87,7 +87,7 @@ namespace pdf_compressor.Controllers
                         Console.WriteLine($"Engine: {request.Engine}");
                        
 
-                        PdfJob pdfJob = _jobService.CreateJob(
+                        var (pdfJob, accessToken) = _jobService.CreateJob(
                                 jobId,
                                 inputPath,
                                 outputPath,
@@ -146,14 +146,16 @@ namespace pdf_compressor.Controllers
                         return Ok(new
                         {
                                 jobId = jobId,
-                                position=_queue.GetPosition(jobId)
+                                accessToken = accessToken,
+                                position = _queue.GetPosition(jobId)
                         });
-
                 }
 
                 
                 [HttpGet("get_compress_PDF")]
-                public async Task<IActionResult> GetCompress(string jobId)
+                public async Task<IActionResult> GetCompress(
+                        string jobId,
+                        [FromQuery] string accessToken)
                 {
                         PdfJob? job = await _jobService.GetJobAsync(jobId);
 
@@ -163,6 +165,17 @@ namespace pdf_compressor.Controllers
                                 {
                                         Error = "JobNotFound",
                                         Message = "Job not found."
+                                });
+                        }
+                        
+                        if (!_jobService.ValidateAccessToken(
+                                    job,
+                                    accessToken))
+                        {
+                                return Unauthorized(new ApiError
+                                {
+                                        Error = "InvalidAccessToken",
+                                        Message = "Invalid or missing access token."
                                 });
                         }
 
@@ -198,9 +211,10 @@ namespace pdf_compressor.Controllers
                         );
                 }
                 
-                
                 [HttpGet("status/{jobId}")]
-                public async Task<IActionResult> GetStatus(string jobId)
+                public async Task<IActionResult> GetStatus(
+                        string jobId,
+                        [FromQuery] string accessToken)
                 {
                         PdfJob? job = await _jobService.GetJobAsync(jobId);
 
@@ -210,6 +224,17 @@ namespace pdf_compressor.Controllers
                                 {
                                         Error = "JobNotFound",
                                         Message = "Job not found."
+                                });
+                        }
+                        
+                        if (!_jobService.ValidateAccessToken(
+                                    job,
+                                    accessToken))
+                        {
+                                return Unauthorized(new ApiError
+                                {
+                                        Error = "InvalidAccessToken",
+                                        Message = "Invalid or missing access token."
                                 });
                         }
 
@@ -236,8 +261,32 @@ namespace pdf_compressor.Controllers
                 }
                 
                 [HttpPost("cancel/{jobId}")]
-                public IActionResult CancelJob(string jobId)
+                public async Task<IActionResult> CancelJob(
+                        string jobId,
+                        [FromQuery] string accessToken)
                 {
+                        PdfJob? job = await _jobService.GetJobAsync(jobId);
+
+                        if (job == null)
+                        {
+                                return NotFound(new ApiError
+                                {
+                                        Error = "JobNotFound",
+                                        Message = "Job not found."
+                                });
+                        }
+
+                        if (!_jobService.ValidateAccessToken(
+                                    job,
+                                    accessToken))
+                        {
+                                return Unauthorized(new ApiError
+                                {
+                                        Error = "InvalidAccessToken",
+                                        Message = "Invalid or missing access token."
+                                });
+                        }
+                        
                         var cancelled = _jobCancellationService.Cancel(jobId);
 
                         if (!cancelled)
