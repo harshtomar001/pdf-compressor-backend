@@ -1,5 +1,6 @@
 ﻿# Phase 6 — Performance & Benchmarking
 
+
 ## 1. Objective
 
 The objective of Phase 6 was to measure and evaluate the performance of the PDF compression backend.
