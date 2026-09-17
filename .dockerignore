@@ -1,0 +1,32 @@
+# Build output
+bin/
+obj/
+
+# Visual Studio
+.vs/
+.vscode/
+
+# User-specific files
+*.user
+*.suo
+*.userosscache
+*.sln.docstates
+
+# Git
+.git/
+.gitignore
+
+# Documentation / local notes
+*.md
+
+# Temporary files
+*.tmp
+*.temp
+*.log
+
+# Local PDF storage
+PDF_folder/
+
+# OS files
+Thumbs.db
+.DS_Store

@@ -5,11 +5,11 @@
         <Nullable>enable</Nullable>
         <ImplicitUsings>enable</ImplicitUsings>
     </PropertyGroup>
-    
-    <ItemGroup>
-        <PackageReference Include="Microsoft.AspNetCore.OpenApi" Version="10.0.8" />
-    </ItemGroup>
-    
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.AspNetCore.OpenApi" Version="10.0.8" />
+    <PackageReference Include="Microsoft.OpenApi" Version="2.7.5" />
+  </ItemGroup>
     <ItemGroup>
       <_ContentIncludedByDefault Remove="PDF_folder\5242f47c-9b18-4335-833b-df06383ad989\job.json" />
       <_ContentIncludedByDefault Remove="PDF_folder\53243a2c-03cd-446f-a432-2f68ca9ecc51\job.json" />
@@ -51,6 +51,7 @@
       <_ContentIncludedByDefault Remove="PDF_folder\cac6b0f4-e445-409c-9a71-60780edff4dd\job.json" />
       <_ContentIncludedByDefault Remove="PDF_folder\fc5017ea-0816-49ca-a934-7c9849291770\job.json" />
       <_ContentIncludedByDefault Remove="PDF_folder\fea58c57-9f90-4e87-95df-76b5483a9a54\job.json" />
+      <_ContentIncludedByDefault Remove="PDF_folder\39a69d54-3c01-4126-b0e1-31f3b162058d\job.json" />
     </ItemGroup>
 
 </Project>

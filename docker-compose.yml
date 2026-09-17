@@ -1,0 +1,12 @@
+﻿services:
+  pdf-compressor:
+    image: pdf-compressor:phase8
+    container_name: pdf-compressor
+    ports:
+      - "8080:8080"
+    volumes:
+      - pdf_storage:/app/PDF_folder
+    restart: unless-stopped
+
+volumes:
+  pdf_storage:

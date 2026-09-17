@@ -53,7 +53,7 @@ public class GhostscriptEngine : IPdfCompressionEngine
         var stopwatch = Stopwatch.StartNew();
 
         process.Start();
-        string error = null;
+        string error = string.Empty;
 
         try
         {

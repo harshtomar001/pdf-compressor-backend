@@ -121,9 +121,7 @@ public class Program
         {
             options.MultipartBodyLengthLimit = 600L * 1024 * 1024;
         });
-
-
-        builder.WebHost.UseUrls("http://0.0.0.0:6464");
+        
 
         var app = builder.Build(); 
         app.UseRateLimiter();

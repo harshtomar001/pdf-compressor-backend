@@ -47,6 +47,15 @@ namespace pdf_compressor.Controllers
                 {
                         return Ok("Hello World!\n PDF COMPRESSION BACKEND");
                 }
+                
+                [HttpGet("health")]
+                public IActionResult Health()
+                {
+                        return Ok(new
+                        {
+                                status = "healthy"
+                        });
+                }
 
                 [HttpPost("compress_PDF")]
                 [EnableRateLimiting("compression")]
@@ -86,14 +95,6 @@ namespace pdf_compressor.Controllers
                                 
                                 
                         }
-                        
-                        // Console.WriteLine("1. File path done");
-                        //
-                        // Console.WriteLine($"{inputPath} -> {outputPath} -> {jobId}");
-                        //
-                        // Console.WriteLine($"Profile {request.Profile}");
-                        // Console.WriteLine($"Engine: {request.Engine}");
-                       
 
                         _logger.LogInformation(
                                 "Compression request received. JobId: {JobId}, FileName: {FileName}, Engine: {Engine}, Profile: {Profile}",
