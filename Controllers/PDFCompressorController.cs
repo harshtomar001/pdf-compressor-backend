@@ -22,7 +22,6 @@ namespace pdf_compressor.Controllers
                 private readonly IHubContext<PdfHub> _hub;
                 private readonly IFileStorage _fileStorage;
                 private readonly IJobCancellationService _jobCancellationService;
-                
                 private readonly ILogger<PdfWorker> _logger;
 
                 public PdfCompressorController(
@@ -59,13 +58,12 @@ namespace pdf_compressor.Controllers
 
                 [HttpPost("compress_PDF")]
                 [EnableRateLimiting("compression")]
-                public async Task<IActionResult> Compress([FromForm] CompressionRequest request)
+                public async Task<IActionResult> Compress(
+                        [FromForm] CompressionRequest request)
                 {
                         string inputPath;
                         string outputPath;
                         string jobId;
-                        
-                        Console.WriteLine("1. File received");
                         
                         try
                         {
@@ -169,7 +167,7 @@ namespace pdf_compressor.Controllers
                         {
                                 jobId = jobId,
                                 accessToken = accessToken,
-                                position = _queue.GetPosition(jobId)
+                                position = _queue.GetPosition(jobId) +1
                         });
                 }
 

@@ -34,8 +34,29 @@ public class PdfHub : Hub
         await Groups.AddToGroupAsync(
             Context.ConnectionId,
             jobId);
-        
-        // we assign a group to each jobID to send the message to the user
-        // with that job Id  (so that chat will  server to one not to all )
+
+        // Send the current job status to the newly connected client.
+        // This prevents fast jobs from being missed before SignalR connects.
+       
+        string message = job.Status switch
+        {
+            
+            JobStatus.Processing =>
+                "Compression started",
+
+            JobStatus.Completed =>
+                "Compression Completed",
+
+            JobStatus.Failed =>
+                "Compression Failed",
+
+            _ =>
+                "Job status unknown"
+        };
+
+        await Clients.Caller.SendAsync(
+            "JobUpdate",
+            message
+        );
     }
 }

@@ -1,11 +1,22 @@
 ﻿services:
   pdf-compressor:
-    image: pdf-compressor:phase8
+    image: pdf-compressor:phase9
     container_name: pdf-compressor
-    ports:
-      - "8080:8080"
+    expose:
+      - "8080"
     volumes:
       - pdf_storage:/app/PDF_folder
+    restart: unless-stopped
+
+  nginx:
+    image: nginx:alpine
+    container_name: pdf-nginx
+    ports:
+      - "80:80"
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+    depends_on:
+      - pdf-compressor
     restart: unless-stopped
 
 volumes:

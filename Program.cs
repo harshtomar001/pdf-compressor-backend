@@ -9,6 +9,8 @@ using pdf_compressor.Configuration;
 using System.Threading.RateLimiting;
 using Microsoft.AspNetCore.Mvc;
 using pdf_compressor.Models;
+using Microsoft.AspNetCore.HttpOverrides;
+using System.Net;
 
 public class Program
 {
@@ -73,7 +75,7 @@ public class Program
                     key,
                     _ => new FixedWindowRateLimiterOptions
                     {
-                        PermitLimit = 5,
+                        PermitLimit = 8,
                         Window = TimeSpan.FromMinutes(1),
                         QueueLimit = 0
                     });
@@ -119,11 +121,35 @@ public class Program
 
         builder.Services.Configure<FormOptions>(options =>
         {
-            options.MultipartBodyLengthLimit = 600L * 1024 * 1024;
+            options.MultipartBodyLengthLimit = 1500L * 1024 * 1024;
         });
         
+        builder.Services.Configure<ForwardedHeadersOptions>(options =>
+        {
+            options.ForwardedHeaders =
+                ForwardedHeaders.XForwardedFor |
+                ForwardedHeaders.XForwardedProto;
 
-        var app = builder.Build(); 
+            options.KnownIPNetworks.Add(
+                new System.Net.IPNetwork(
+                    IPAddress.Parse("172.19.0.0"),
+                    16));
+        });
+        
+        builder.Services.Configure<ForwardedHeadersOptions>(options =>
+        {
+            options.ForwardedHeaders =
+                ForwardedHeaders.XForwardedFor |
+                ForwardedHeaders.XForwardedProto;
+
+            options.KnownIPNetworks.Add(
+                new System.Net.IPNetwork(
+                    IPAddress.Parse("172.19.0.0"),
+                    16));
+        });
+        var app = builder.Build();
+
+        app.UseForwardedHeaders();
         app.UseRateLimiter();
         app.MapControllers();
         app.MapHub<PdfHub>("/PdfHub");

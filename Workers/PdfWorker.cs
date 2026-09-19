@@ -102,7 +102,7 @@ public class PdfWorker : BackgroundService
     {
         while (!stoppingToken.IsCancellationRequested)
         {
-            await _queue.WaitForJobAsync(stoppingToken); //  waits until the queue is empty 
+            await _queue.WaitForJobAsync(stoppingToken); // Waits until at least one job is available.
 
             if (stoppingToken.IsCancellationRequested)
             {
@@ -112,7 +112,12 @@ public class PdfWorker : BackgroundService
             if (_queue.TryDequeue(out PdfJob? job) && job != null)
             {
                 var jobToken = _jobCancellationService.Register(job.JobId); // register for ( if user cancel the compression then it can stop the process )
+                
+                // The job has left the queue.
+                // Update the positions of all remaining queued jobs.
+                await NotifyQueuePositions();
 
+                
                 try
                 {
                     await ProcessJobAsync(job, jobToken);
@@ -200,8 +205,6 @@ public class PdfWorker : BackgroundService
             _jobService.UpdateJob(job);
 
             await _fileStorage.SaveJobAsync(job);
-
-            await NotifyQueuePositions();
 
             job.Completion.TrySetResult(true);
 
