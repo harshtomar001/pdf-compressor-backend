@@ -8,6 +8,7 @@ using pdf_compressor.Services.Jobs;
 using pdf_compressor.Services.Queue;
 using pdf_compressor.Services.Storage;
 using pdf_compressor.Workers;
+using pdf_compressor.Services.Monitoring;
 
 namespace pdf_compressor.Controllers
 {
@@ -23,6 +24,7 @@ namespace pdf_compressor.Controllers
                 private readonly IFileStorage _fileStorage;
                 private readonly IJobCancellationService _jobCancellationService;
                 private readonly ILogger<PdfWorker> _logger;
+                private readonly WorkerMetrics _workerMetrics;
 
                 public PdfCompressorController(
                         IPdfQueue _queue,
@@ -30,6 +32,7 @@ namespace pdf_compressor.Controllers
                         IFileStorage fileStorage,
                         IHubContext<PdfHub> hub,
                         ILogger<PdfWorker> logger,
+                        WorkerMetrics workerMetrics,
                         IJobCancellationService jobCancellationService)
                 {
                         this._queue = _queue;
@@ -38,6 +41,7 @@ namespace pdf_compressor.Controllers
                         this._fileStorage = fileStorage;
                         this._jobCancellationService = jobCancellationService;
                         _logger = logger;
+                        _workerMetrics =  workerMetrics;
                 }
 
                 
@@ -326,6 +330,18 @@ namespace pdf_compressor.Controllers
                         });
                 }
 
+                [HttpGet("metrics")]
+                public IActionResult Metrics()
+                {
+                        return Ok(new
+                        {
+                                activeJobs = _workerMetrics.ActiveJobs,
+                                completedJobs = _workerMetrics.CompletedJobs,
+                                failedJobs = _workerMetrics.FailedJobs,
+                                cancelledJobs = _workerMetrics.CancelledJobs
+                        });
+                }
+                
         }
         
 }
