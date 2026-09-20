@@ -222,11 +222,22 @@ public class PdfWorker : BackgroundService
             long outputSize =
                 new FileInfo(job.OutputPath).Length;
 
+            double reductionPercentage =
+                inputSize > 0
+                    ? (1.0 - (double)outputSize / inputSize) * 100.0
+                    : 0.0;
+
             _logger.LogInformation(
-                "Compression result. JobId: {JobId}, InputBytes: {InputBytes}, OutputBytes: {OutputBytes}",
+                "Compression result. JobId: {JobId}, Engine: {Engine}, Profile: {Profile}, " +
+                "InputBytes: {InputBytes}, OutputBytes: {OutputBytes}, " +
+                "ReductionPercentage: {ReductionPercentage:F2}, DurationMs: {DurationMs:F3}",
                 job.JobId,
+                job.CompressionEngine,
+                job.Compression.Profile,
                 inputSize,
-                outputSize
+                outputSize,
+                reductionPercentage,
+                stopwatch.Elapsed.TotalMilliseconds
             );
         }
 
