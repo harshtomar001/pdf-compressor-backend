@@ -6,6 +6,7 @@ using Microsoft.AspNetCore.SignalR;
 using pdf_compressor.Services.Jobs;
 using pdf_compressor.Services.Queue;
 using pdf_compressor.Services.Storage;
+using pdf_compressor.Services.Monitoring;
 
 
 namespace pdf_compressor.Workers;
@@ -18,6 +19,7 @@ public class PdfWorker : BackgroundService
     private readonly IHubContext<PdfHub> _hub;
     private readonly IFileStorage _fileStorage;
     private readonly ILogger<PdfWorker> _logger;
+    private readonly WorkerMetrics _workerMetrics;
     
     private readonly IJobCancellationService _jobCancellationService;
 
@@ -27,6 +29,7 @@ public class PdfWorker : BackgroundService
         CompressionRouter compressionRouter,
         IHubContext<PdfHub> hub,
         IFileStorage fileStorage,
+        WorkerMetrics workerMetrics,
         IJobCancellationService jobCancellationService,
         ILogger<PdfWorker> logger
     )
@@ -35,6 +38,7 @@ public class PdfWorker : BackgroundService
         _jobService = jobService;
         _compressionRouter = compressionRouter;
         _hub = hub;
+        _workerMetrics = workerMetrics;
         _fileStorage = fileStorage;
         _jobCancellationService = jobCancellationService;
         _logger = logger;
@@ -111,6 +115,15 @@ public class PdfWorker : BackgroundService
 
             if (_queue.TryDequeue(out PdfJob? job) && job != null)
             {
+                _workerMetrics.JobStarted();
+
+                _logger.LogInformation(
+                    "Worker utilization. ActiveJobs: {ActiveJobs}, CompletedJobs: {CompletedJobs}, FailedJobs: {FailedJobs}, CancelledJobs: {CancelledJobs}",
+                    _workerMetrics.ActiveJobs,
+                    _workerMetrics.CompletedJobs,
+                    _workerMetrics.FailedJobs,
+                    _workerMetrics.CancelledJobs
+                );
                 
                 var queueWaitTime =
                     DateTime.UtcNow - job.QueuedAt;
@@ -217,6 +230,15 @@ public class PdfWorker : BackgroundService
             await _fileStorage.SaveJobAsync(job);
 
             job.Completion.TrySetResult(true);
+            
+            _workerMetrics.JobCompleted();
+
+            _logger.LogInformation(
+                "Worker job completed. JobId: {JobId}, ActiveJobs: {ActiveJobs}, CompletedJobs: {CompletedJobs}",
+                job.JobId,
+                _workerMetrics.ActiveJobs,
+                _workerMetrics.CompletedJobs
+            );
 
             await _hub.Clients
                 .Group(job.JobId)
@@ -302,6 +324,15 @@ public class PdfWorker : BackgroundService
             await _fileStorage.SaveJobAsync(job);
 
             job.Completion.TrySetResult(false);
+            
+            _workerMetrics.JobCancelled();
+
+            _logger.LogInformation(
+                "Worker job cancelled. JobId: {JobId}, ActiveJobs: {ActiveJobs}, CancelledJobs: {CancelledJobs}",
+                job.JobId,
+                _workerMetrics.ActiveJobs,
+                _workerMetrics.CancelledJobs
+            );
 
             try
             {
@@ -372,6 +403,15 @@ public class PdfWorker : BackgroundService
             await _fileStorage.SaveJobAsync(job);
 
             job.Completion.TrySetResult(false);
+            
+            _workerMetrics.JobFailed();
+
+            _logger.LogInformation(
+                "Worker job failed. JobId: {JobId}, ActiveJobs: {ActiveJobs}, FailedJobs: {FailedJobs}",
+                job.JobId,
+                _workerMetrics.ActiveJobs,
+                _workerMetrics.FailedJobs
+            );
 
             _logger.LogError(
                 "Job marked as failed. JobId: {JobId}",

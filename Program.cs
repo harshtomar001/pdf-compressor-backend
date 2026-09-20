@@ -11,6 +11,7 @@ using Microsoft.AspNetCore.Mvc;
 using pdf_compressor.Models;
 using Microsoft.AspNetCore.HttpOverrides;
 using System.Net;
+using pdf_compressor.Services.Monitoring;
 
 public class Program
 {
@@ -98,6 +99,8 @@ public class Program
         builder.Services.AddSingleton<
             IJobCancellationService,
             JobCancellationService>();
+        
+        builder.Services.AddSingleton<WorkerMetrics>();
         
         builder.Services.AddSingleton<IFileStorage, LocalFileStorage>();
         
