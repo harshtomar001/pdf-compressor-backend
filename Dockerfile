@@ -1,3 +1,4 @@
+
 # ================================
 # Stage 1: Build
 # ================================
@@ -31,6 +32,7 @@ RUN apt-get update \
         ghostscript \
         mupdf-tools \
         qpdf \
+        wget \
     && rm -rf /var/lib/apt/lists/*
 
 # Copy published application
