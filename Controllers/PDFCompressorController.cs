@@ -48,6 +48,7 @@ namespace pdf_compressor.Controllers
                 }
                 
                 [HttpGet("health")]
+                [HttpHead("health")]
                 public IActionResult Health()
                 {
                         return Ok(new
