@@ -151,6 +151,9 @@ public class Program
 
         app.UseForwardedHeaders();
         app.UseRateLimiter();
+
+        app.UseMiddleware<pdf_compressor.Middleware.RequestMetricsMiddleware>();
+
         app.MapControllers();
         app.MapHub<PdfHub>("/PdfHub");
        
