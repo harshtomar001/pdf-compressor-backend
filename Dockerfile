@@ -43,11 +43,11 @@ RUN mkdir -p /app/PDF_folder \
     && chown -R appuser:appuser /app
 
 # ASP.NET Core listens on port 8080
-ENV ASPNETCORE_HTTP_PORTS=8080
+ENV ASPNETCORE_HTTP_PORTS=10000
 
-EXPOSE 8080
+EXPOSE 10000
 HEALTHCHECK --interval=30s --timeout=5s --start-period=10s --retries=3 \
-    CMD wget --no-verbose --tries=1 --spider http://localhost:8080/PdfCompressor/health || exit 1
+    CMD wget --no-verbose --tries=1 --spider http://localhost:10000/PdfCompressor/health || exit 1
     
 # Run application as non-root user
 USER appuser
