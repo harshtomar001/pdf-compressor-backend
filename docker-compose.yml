@@ -1,6 +1,6 @@
 ﻿services:
   pdf-compressor:
-    image: pdf-compressor:phase9
+    image: pdf-compressor:phase10
     container_name: pdf-compressor
     expose:
       - "8080"
