@@ -333,9 +333,12 @@ namespace pdf_compressor.Controllers
                 [HttpGet("metrics")]
                 public IActionResult Metrics()
                 {
+                        var queuedJobs = _queue.GetQueuedJobs();
+
                         return Ok(new
                         {
                                 activeJobs = _workerMetrics.ActiveJobs,
+                                queuedJobs = queuedJobs.Count,
                                 completedJobs = _workerMetrics.CompletedJobs,
                                 failedJobs = _workerMetrics.FailedJobs,
                                 cancelledJobs = _workerMetrics.CancelledJobs
