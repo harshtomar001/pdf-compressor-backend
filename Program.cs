@@ -127,17 +127,6 @@ public class Program
             options.MultipartBodyLengthLimit = 1500L * 1024 * 1024;
         });
         
-        builder.Services.Configure<ForwardedHeadersOptions>(options =>
-        {
-            options.ForwardedHeaders =
-                ForwardedHeaders.XForwardedFor |
-                ForwardedHeaders.XForwardedProto;
-
-            options.KnownIPNetworks.Add(
-                new System.Net.IPNetwork(
-                    IPAddress.Parse("172.19.0.0"),
-                    16));
-        });
         
         builder.Services.Configure<ForwardedHeadersOptions>(options =>
         {
