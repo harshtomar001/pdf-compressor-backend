@@ -20,6 +20,8 @@ public class PdfJob
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
 
     public string? ErrorMessage { get; set; }
+    
+    public DateTime QueuedAt { get; set; }
 
     [JsonIgnore]
     public TaskCompletionSource<bool> Completion { get; set; } =

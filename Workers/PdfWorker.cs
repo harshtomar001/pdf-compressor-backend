@@ -111,6 +111,16 @@ public class PdfWorker : BackgroundService
 
             if (_queue.TryDequeue(out PdfJob? job) && job != null)
             {
+                
+                var queueWaitTime =
+                    DateTime.UtcNow - job.QueuedAt;
+
+                _logger.LogInformation(
+                    "Job dequeued. JobId: {JobId}, QueueWaitMs: {QueueWaitMs:F3}",
+                    job.JobId,
+                    queueWaitTime.TotalMilliseconds
+                );
+                
                 var jobToken = _jobCancellationService.Register(job.JobId); // register for ( if user cancel the compression then it can stop the process )
                 
                 // The job has left the queue.

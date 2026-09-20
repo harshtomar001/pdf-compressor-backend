@@ -10,6 +10,8 @@ public class PdfQueue : IPdfQueue, IDisposable
 
     public void Enqueue(PdfJob job)
     {
+        job.QueuedAt = DateTime.UtcNow;
+
         _queue.Enqueue(job);
 
         Console.WriteLine(
